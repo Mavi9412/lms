@@ -1,13 +1,14 @@
+// import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-const PrivateRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
+// const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
+//     const { isAuthenticated } = useAuth();
+//     return isAuthenticated ? children : <Navigate to="/login" />;
+// };
 
 function App() {
   return (
