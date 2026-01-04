@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from sqlmodel import Field, SQLModel
 from enum import Enum
@@ -19,3 +20,15 @@ class User(UserBase, table=True):
 
 class UserCreate(UserBase):
     password: str
+
+class CourseBase(SQLModel):
+    title: str = Field(index=True)
+    description: str
+
+class Course(CourseBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    teacher_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CourseCreate(CourseBase):
+    pass
