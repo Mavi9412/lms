@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from sqlmodel import SQLModel
 from .database import engine
-from .routers import auth
+from .routers import auth, courses
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -12,6 +12,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="College LMS API", lifespan=lifespan)
 
 app.include_router(auth.router)
+app.include_router(courses.router)
 
 @app.get("/")
 def read_root():
