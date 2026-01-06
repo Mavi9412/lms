@@ -3,11 +3,12 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, BookOpen, Clock, User as UserIcon } from 'lucide-react';
 
-id: number;
-title: string;
-description: string;
-teacher_id: number;
-created_at: string;
+interface Course {
+    id: number;
+    title: string;
+    description: string;
+    teacher_id: number;
+    created_at: string;
 }
 
 const Courses = () => {
