@@ -1,17 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Premium Dark Theme Palette */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
-  --bg-card: #1e293b; /* Card background */
-  
+  --bg-card: #1e293b;
+  /* Card background */
+
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  
+
   /* Brand Colors - Indigo/Violet Gradient Feel */
   --primary: #6366f1;
   --primary-hover: #4f46e5;
   --secondary: #ec4899;
-  
+
   --accent-success: #10b981;
   --accent-warning: #f59e0b;
   --accent-error: #ef4444;
@@ -21,7 +26,7 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
-  
+
   /* Transitions */
   --transition-base: all 0.2s ease-in-out;
 }
@@ -46,29 +51,47 @@ button {
 }
 
 /* Typography Utility */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--text-primary);
   font-weight: 700;
   line-height: 1.2;
 }
 
-h1 { font-size: 2.5rem; letter-spacing: -0.025em; }
-h2 { font-size: 2rem; letter-spacing: -0.025em; }
-h3 { font-size: 1.5rem; }
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: -0.025em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary); 
+  background: var(--bg-primary);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-secondary); 
+  background: var(--bg-secondary);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary); 
+  background: var(--text-secondary);
 }
 
 /* Glassmorphism Utility */
@@ -90,7 +113,7 @@ h3 { font-size: 1.5rem; }
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-color: rgba(99, 102, 241, 0.2); 
+  border-color: rgba(99, 102, 241, 0.2);
 }
 
 /* Button Styles */
@@ -113,7 +136,7 @@ h3 { font-size: 1.5rem; }
 
 .btn-primary:hover {
   background-color: var(--primary-hover);
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); 
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
 }
 
 .btn-secondary {
