@@ -1,6 +1,7 @@
 // import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
+import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Courses from './pages/Courses';
@@ -17,12 +18,14 @@ function App() {
       <BrowserRouter>
         <div className="app-container">
           <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/courses" element={<Courses />} />
-            {/* Example Protected Route */}
-            {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+            <Route element={<Layout />}>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/courses" element={<Courses />} />
+              {/* Example Protected Route */}
+              {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+            </Route>
           </Routes>
         </div>
       </BrowserRouter>
