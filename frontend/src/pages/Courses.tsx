@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Plus, BookOpen, Clock, User as UserIcon, Search, Filter } from 'lucide-react';
+import { Plus, BookOpen, Clock, User as UserIcon, Search } from 'lucide-react';
 
 interface Course {
     id: number;
