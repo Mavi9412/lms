@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -26,11 +26,7 @@ const Login = () => {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
-            // For now, we decode the role from token or make another request.
-            // Simplified: passing dummy user data until we have a /me endpoint or decode JWT
-            // In a real app, decode the JWT payload here.
             const dummyUser = { email: email, role: 'student', full_name: 'User' };
-
             login(response.data.access_token, dummyUser);
             navigate('/');
         } catch (err: any) {
@@ -41,29 +37,31 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
-            <div className="max-w-md w-full bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-700">
+        <div className="min-h-[80vh] flex items-center justify-center px-4 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+            <div className="w-full max-w-md glass p-8 rounded-2xl animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-                    <p className="text-gray-400">Sign in to your account</p>
+                    <h2 className="text-3xl font-bold mb-2">Welcome Back</h2>
+                    <p className="text-text-secondary">Sign in to continue your learning journey</p>
                 </div>
 
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-lg flex items-center gap-2 mb-6">
-                        <AlertCircle className="w-5 h-5" />
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg flex items-center gap-2 mb-6 text-sm">
+                        <AlertCircle className="w-4 h-4" />
                         <span>{error}</span>
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                        <label className="block text-sm font-medium text-text-secondary mb-2">Email Address</label>
+                        <div className="relative group">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors" />
                             <input
                                 type="email"
                                 required
-                                className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="name@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -72,13 +70,16 @@ const Login = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-text-secondary">Password</label>
+                            <Link to="#" className="text-xs text-primary hover:text-primary-hover">Forgot password?</Link>
+                        </div>
+                        <div className="relative group">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors" />
                             <input
                                 type="password"
                                 required
-                                className="w-full bg-gray-900 border border-gray-700 text-white rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -89,15 +90,17 @@ const Login = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full btn btn-primary py-3 text-lg font-semibold shadow-lg shadow-primary/25"
+                        className="w-full btn btn-primary py-3 text-lg font-semibold shadow-lg shadow-primary/25 relative overflow-hidden group"
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                            {loading ? 'Signing in...' : <>Sign In <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+                        </span>
                     </button>
                 </form>
 
-                <p className="mt-8 text-center text-gray-400">
+                <p className="mt-8 text-center text-text-secondary">
                     Don't have an account?{' '}
-                    <Link to="/register" className="text-primary hover:text-primary-hover font-medium">
+                    <Link to="/register" className="text-primary hover:text-primary-hover font-medium underline-offset-4 hover:underline">
                         Create account
                     </Link>
                 </p>
