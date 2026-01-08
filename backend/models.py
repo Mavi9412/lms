@@ -32,3 +32,27 @@ class Course(CourseBase, table=True):
 
 class CourseCreate(CourseBase):
     pass
+
+class LessonBase(SQLModel):
+    title: str
+    content: str
+    order: int = Field(default=0)
+
+class Lesson(LessonBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    course_id: int = Field(foreign_key="course.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class LessonCreate(LessonBase):
+    pass
+
+class LessonUpdate(SQLModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    order: Optional[int] = None
+
+class Enrollment(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key="user.id")
+    course_id: int = Field(foreign_key="course.id")
+    enrolled_at: datetime = Field(default_factory=datetime.utcnow)
