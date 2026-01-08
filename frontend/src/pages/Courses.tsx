@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, BookOpen, Clock, User as UserIcon, Search } from 'lucide-react';
@@ -16,6 +17,7 @@ const Courses = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -82,7 +84,8 @@ const Courses = () => {
                 {filteredCourses.map((course, index) => (
                     <div
                         key={course.id}
-                        className="card group hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 border border-white/5 bg-bg-card/50 backdrop-blur-sm"
+                        onClick={() => navigate(`/courses/${course.id}`)}
+                        className="card group hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 border border-white/5 bg-bg-card/50 backdrop-blur-sm cursor-pointer"
                         style={{ animationDelay: `${index * 100}ms` }}
                     >
                         <div className="h-48 bg-gradient-to-br from-bg-secondary to-gray-800 rounded-t-xl mb-4 flex items-center justify-center overflow-hidden relative group-hover:from-gray-800 group-hover:to-gray-700 transition-colors">
