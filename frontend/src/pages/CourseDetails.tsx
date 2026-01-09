@@ -8,7 +8,6 @@ import {
     Users,
     ArrowLeft,
     CheckCircle,
-    XCircle,
     ChevronDown,
     ChevronUp,
     Plus,
@@ -125,8 +124,7 @@ const CourseDetails = () => {
         );
     }
 
-    const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
-    const isOwner = course.teacher_id === user?.id || user?.role === 'admin';
+    const isOwner = user?.role === 'admin';
     const isStudent = user?.role === 'student';
 
     return (
