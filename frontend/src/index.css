@@ -1,9 +1,6 @@
-/* stylelint-disable-next-line */
-@tailwind base;
-/* stylelint-disable-next-line */
-@tailwind components;
-/* stylelint-disable-next-line */
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   /* Premium Dark Theme Palette */
