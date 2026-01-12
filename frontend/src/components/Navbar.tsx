@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, BookOpen } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
+    const { user } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -52,12 +54,23 @@ const Navbar = () => {
                         ))}
                     </div>
                     <div className="flex items-center gap-4 pl-8 border-l border-white/10">
-                        <Link to="/login" className="text-sm font-semibold hover:text-white text-text-secondary transition-colors">
-                            Log in
-                        </Link>
-                        <Link to="/register" className="btn btn-primary text-sm py-2 px-5 shadow-lg shadow-primary/25">
-                            Get Started
-                        </Link>
+                        {user ? (
+                            <Link to="/profile" className="flex items-center gap-2 text-sm font-semibold text-text-secondary hover:text-white transition-colors group">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary/30 transition-colors">
+                                    {user.full_name?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <span className="hidden lg:inline">{user.full_name?.split(' ')[0]}</span>
+                            </Link>
+                        ) : (
+                            <>
+                                <Link to="/login" className="text-sm font-semibold hover:text-white text-text-secondary transition-colors">
+                                    Log in
+                                </Link>
+                                <Link to="/register" className="btn btn-primary text-sm py-2 px-5 shadow-lg shadow-primary/25">
+                                    Get Started
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -80,8 +93,8 @@ const Navbar = () => {
                                 to={link.path}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`text-base font-medium p-2 rounded-lg transition-colors ${isActive(link.path)
-                                        ? 'bg-primary/10 text-primary'
-                                        : 'text-text-secondary hover:bg-white/5 hover:text-white'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'text-text-secondary hover:bg-white/5 hover:text-white'
                                     }`}
                             >
                                 {link.name}
