@@ -4,6 +4,8 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Plus, BookOpen, Clock, User as UserIcon, Search } from 'lucide-react';
 
+import CreateCourseModal from '../components/CreateCourseModal';
+
 interface Course {
     id: number;
     title: string;
@@ -17,6 +19,7 @@ const Courses = () => {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -50,6 +53,22 @@ const Courses = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <CreateCourseModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCourseCreated={() => {
+                    // Re-fetch courses
+                    const fetchCourses = async () => {
+                        try {
+                            const response = await api.get('/courses/');
+                            setCourses(response.data);
+                        } catch (error) {
+                            console.error("Failed to fetch courses", error);
+                        }
+                    };
+                    fetchCourses();
+                }}
+            />
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                 <div>
@@ -72,7 +91,10 @@ const Courses = () => {
 
 
                     {isTeacher && (
-                        <button className="btn btn-primary flex items-center gap-2 whitespace-nowrap shadow-lg shadow-primary/20">
+                        <button
+                            onClick={() => setIsCreateModalOpen(true)}
+                            className="btn btn-primary flex items-center gap-2 whitespace-nowrap shadow-lg shadow-primary/20"
+                        >
                             <Plus className="w-5 h-5" />
                             <span className="hidden sm:inline">Create Course</span>
                         </button>
