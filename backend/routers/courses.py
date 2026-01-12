@@ -2,9 +2,9 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
-from ..database import get_session
-from ..models import Course, CourseCreate, User, Role, Lesson, LessonCreate, LessonUpdate, Enrollment
-from ..auth import get_current_user
+from database import get_session
+from models import Course, CourseCreate, User, Role, Lesson, LessonCreate, LessonUpdate, Enrollment
+from auth import get_current_user
 
 router = APIRouter(
     prefix="/courses",

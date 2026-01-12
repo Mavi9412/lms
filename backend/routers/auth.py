@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-from ..database import get_session
-from ..models import User, UserCreate, Role
-from ..auth import (
+from database import get_session
+from models import User, UserCreate, Role
+from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     get_password_hash,
