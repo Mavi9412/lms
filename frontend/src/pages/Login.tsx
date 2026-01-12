@@ -26,8 +26,14 @@ const Login = () => {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             });
 
-            const dummyUser = { email: email, role: 'student', full_name: 'User' };
-            login(response.data.access_token, dummyUser);
+            const { access_token } = response.data;
+
+            // Get user profile
+            const userResponse = await api.get('/auth/me', {
+                headers: { Authorization: `Bearer ${access_token}` }
+            });
+
+            login(access_token, userResponse.data);
             navigate('/');
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to login');

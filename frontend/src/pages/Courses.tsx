@@ -10,6 +10,7 @@ interface Course {
     description: string;
     teacher_id: number;
     created_at: string;
+    level: string;
 }
 
 const Courses = () => {
@@ -92,7 +93,7 @@ const Courses = () => {
                             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                             <BookOpen className="w-16 h-16 text-gray-600 group-hover:text-primary transition-all duration-300 group-hover:scale-110" />
                             <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-white border border-white/10">
-                                {course.id % 2 === 0 ? 'Beginner' : 'Advanced'} {/* Dummy Level */}
+                                {course.level}
                             </div>
                         </div>
 

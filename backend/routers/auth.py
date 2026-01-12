@@ -10,12 +10,17 @@ from ..auth import (
     create_access_token,
     get_password_hash,
     verify_password,
+    get_current_user,
 )
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
+
+@router.get("/me", response_model=User)
+def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    return current_user
 
 @router.post("/signup", response_model=User)
 def signup(user: UserCreate, session: Session = Depends(get_session)):

@@ -24,6 +24,7 @@ class UserCreate(UserBase):
 class CourseBase(SQLModel):
     title: str = Field(index=True)
     description: str
+    level: str = Field(default="Beginner")
 
 class Course(CourseBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

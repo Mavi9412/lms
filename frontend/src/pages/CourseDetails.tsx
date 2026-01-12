@@ -105,6 +105,19 @@ const CourseDetails = () => {
         }
     };
 
+    const handleDeleteLesson = async (lessonId: number) => {
+        if (!confirm('Are you sure you want to delete this lesson?')) return;
+        try {
+            await api.delete(`/courses/${id}/lessons/${lessonId}`);
+            setCourse(prev => prev ? {
+                ...prev,
+                lessons: prev.lessons.filter(l => l.id !== lessonId)
+            } : null);
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to delete lesson');
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
@@ -300,7 +313,7 @@ const CourseDetails = () => {
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            // TODO: Implement delete
+                                                            handleDeleteLesson(lesson.id);
                                                         }}
                                                         className="p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors"
                                                     >
