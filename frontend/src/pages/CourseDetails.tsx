@@ -14,9 +14,36 @@ import {
     Edit,
     Trash2,
     UserCheck
+    UserCheck
+} from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 
-// ... (existing interfaces)
+interface Teacher {
+    id: number;
+    full_name: string;
+    email: string;
+}
+
+interface Lesson {
+    id: number;
+    title: string;
+    content: string;
+    order: number;
+    course_id: number;
+    created_at: string;
+}
+
+interface CourseDetail {
+    id: number;
+    title: string;
+    description: string;
+    teacher_id: number;
+    created_at: string;
+    teacher: Teacher;
+    lessons: Lesson[];
+    is_enrolled: boolean;
+    enrollment_count: number;
+}
 
 const CourseDetails = () => {
     const { id } = useParams<{ id: string }>();
