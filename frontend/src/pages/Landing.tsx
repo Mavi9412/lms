@@ -3,13 +3,8 @@ import { Link } from 'react-router-dom';
 
 const Landing = () => {
     return (
-        <div className="min-h-screen bg-bg-primary relative overflow-hidden">
-            {/* Animated Background Gradient Mesh */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[800px] h-[800px] bg-primary/30 blur-[150px] rounded-full animate-pulse" />
-                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-secondary/20 blur-[120px] rounded-full float" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] gradient-mesh opacity-20 blur-3xl" />
-            </div>
+        <div className="min-h-screen relative overflow-hidden">
+
 
             {/* Hero Section */}
             <section className="relative pt-12 pb-24 md:pt-20 md:pb-32 px-6">
