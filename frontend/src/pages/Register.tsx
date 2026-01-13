@@ -22,7 +22,7 @@ const Register = () => {
         try {
             await api.post('/auth/signup', formData);
             navigate('/login');
-        } catch (err: any) {
+        } catch (err: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
             console.error('Registration error:', err);
             setError(err.response?.data?.detail || 'Failed to register. Please try again.');
         } finally {
