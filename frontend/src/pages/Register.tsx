@@ -23,7 +23,8 @@ const Register = () => {
             await api.post('/auth/signup', formData);
             navigate('/login');
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Failed to register');
+            console.error('Registration error:', err);
+            setError(err.response?.data?.detail || 'Failed to register. Please try again.');
         } finally {
             setLoading(false);
         }
