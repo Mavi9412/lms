@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const Profile = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const [stats, setStats] = useState({
+    const [stats] = useState({
         coursesEnrolled: 0,
         lessonsCompleted: 0 // Placeholder for now
     });
