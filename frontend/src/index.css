@@ -36,7 +36,7 @@
 
 @layer base {
   body {
-    @apply bg-bg-primary text-text-primary antialiased font-sans selection:bg-primary/30 selection:text-white;
+    @apply bg-bg-primary text-text-primary antialiased font-sans;
   }
 
   h1,
