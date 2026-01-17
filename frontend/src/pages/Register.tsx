@@ -12,6 +12,7 @@ const Register = () => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -99,18 +100,48 @@ const Register = () => {
                             <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors z-10" />
 
                             <div className="relative">
-                                <select
-                                    className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-10 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
-                                    value={formData.role}
-                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 text-left focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all flex items-center justify-between"
                                 >
-                                    <option value="student" className="bg-bg-card">Student</option>
-                                    <option value="teacher" className="bg-bg-card">Teacher</option>
-                                    <option value="admin" className="bg-bg-card">Admin</option>
-                                </select>
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                                </div>
+                                    <span className="capitalize">{formData.role}</span>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                    >
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-bg-card border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                                        {['student', 'teacher', 'admin'].map((role) => (
+                                            <button
+                                                key={role}
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData({ ...formData, role });
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className={`w-full px-4 py-3 text-left capitalize transition-colors hover:bg-white/5 flex items-center justify-between ${formData.role === role ? 'text-primary bg-primary/5 font-medium' : 'text-text-secondary'}`}
+                                            >
+                                                {role}
+                                                {formData.role === role && (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
