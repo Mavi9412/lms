@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 const Landing = () => {
     return (
         <div className="min-h-screen relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute top-0 left-0 w-full h-[800px] gradient-mesh opacity-20 z-0" />
 
 
             {/* Hero Section */}
