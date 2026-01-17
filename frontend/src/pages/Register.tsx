@@ -96,16 +96,22 @@ const Register = () => {
                     <div>
                         <label className="block text-sm font-medium text-text-secondary mb-2">Role</label>
                         <div className="relative group">
-                            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors" />
-                            <select
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
-                                value={formData.role}
-                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            >
-                                <option value="student" className="bg-bg-secondary text-text-primary">Student</option>
-                                <option value="teacher" className="bg-bg-secondary text-text-primary">Teacher</option>
-                                <option value="admin" className="bg-bg-secondary text-text-primary">Admin</option>
-                            </select>
+                            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors z-10" />
+
+                            <div className="relative">
+                                <select
+                                    className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-10 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                >
+                                    <option value="student" className="bg-bg-card">Student</option>
+                                    <option value="teacher" className="bg-bg-card">Teacher</option>
+                                    <option value="admin" className="bg-bg-card">Admin</option>
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
