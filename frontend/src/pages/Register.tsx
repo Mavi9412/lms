@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Mail, Lock, User, AlertCircle, Shield, ArrowRight } from 'lucide-react';
@@ -13,6 +13,8 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
