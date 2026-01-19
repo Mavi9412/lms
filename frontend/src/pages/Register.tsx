@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { Mail, Lock, User, AlertCircle, Shield, ArrowRight } from 'lucide-react';
@@ -13,8 +13,6 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const dropdownButtonRef = useRef<HTMLButtonElement>(null);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -32,17 +30,6 @@ const Register = () => {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        if (isDropdownOpen && dropdownButtonRef.current) {
-            const rect = dropdownButtonRef.current.getBoundingClientRect();
-            setDropdownPosition({
-                top: rect.bottom + window.scrollY + 8,
-                left: rect.left + window.scrollX,
-                width: rect.width
-            });
-        }
-    }, [isDropdownOpen]);
 
     return (
         <div className="min-h-[90vh] flex items-center justify-center px-4 relative py-12">
@@ -114,7 +101,6 @@ const Register = () => {
 
                             <div className="relative">
                                 <button
-                                    ref={dropdownButtonRef}
                                     type="button"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                     className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 text-left focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all flex items-center justify-between"
@@ -137,7 +123,7 @@ const Register = () => {
                                 </button>
 
                                 {isDropdownOpen && (
-                                    <div className="absolute top-full left-0 w-full mt-2 bg-bg-card border border-white/10 rounded-xl shadow-xl overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-bg-secondary border border-white/10 rounded-xl shadow-xl overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-200">
                                         {['student', 'teacher', 'admin'].map((role) => (
                                             <button
                                                 key={role}
