@@ -123,7 +123,7 @@ const Register = () => {
                                 </button>
 
                                 {isDropdownOpen && (
-                                    <div className="absolute top-full left-0 w-full mt-2 bg-bg-card border border-white/10 rounded-xl shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="absolute top-full left-0 w-full mt-2 bg-bg-card border border-white/10 rounded-xl shadow-xl overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-200">
                                         {['student', 'teacher', 'admin'].map((role) => (
                                             <button
                                                 key={role}
