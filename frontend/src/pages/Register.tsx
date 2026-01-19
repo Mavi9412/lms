@@ -33,6 +33,17 @@ const Register = () => {
         }
     };
 
+    useEffect(() => {
+        if (isDropdownOpen && dropdownButtonRef.current) {
+            const rect = dropdownButtonRef.current.getBoundingClientRect();
+            setDropdownPosition({
+                top: rect.bottom + window.scrollY + 8,
+                left: rect.left + window.scrollX,
+                width: rect.width
+            });
+        }
+    }, [isDropdownOpen]);
+
     return (
         <div className="min-h-[90vh] flex items-center justify-center px-4 relative py-12">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/10 blur-[120px] rounded-full pointer-events-none -z-10" />
@@ -103,6 +114,7 @@ const Register = () => {
 
                             <div className="relative">
                                 <button
+                                    ref={dropdownButtonRef}
                                     type="button"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                     className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 text-left focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all flex items-center justify-between"
