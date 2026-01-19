@@ -94,7 +94,7 @@ const Register = () => {
                         </div>
                     </div>
 
-                    <div>
+                    <div className={isDropdownOpen ? 'relative z-50' : 'relative'}>
                         <label className="block text-sm font-medium text-text-secondary mb-2">Role</label>
                         <div className="relative group">
                             <Shield className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors z-10" />
