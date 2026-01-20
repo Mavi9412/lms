@@ -67,7 +67,7 @@ const Login = () => {
                             <input
                                 type="email"
                                 required
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="name@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -85,7 +85,7 @@ const Login = () => {
                             <input
                                 type="password"
                                 required
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

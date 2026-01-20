@@ -56,7 +56,7 @@ const Register = () => {
                             <input
                                 type="text"
                                 required
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="John Doe"
                                 value={formData.full_name}
                                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -71,7 +71,7 @@ const Register = () => {
                             <input
                                 type="email"
                                 required
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="name@example.com"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -86,7 +86,7 @@ const Register = () => {
                             <input
                                 type="password"
                                 required
-                                className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
                                 placeholder="••••••••"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -103,7 +103,7 @@ const Register = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="w-full bg-bg-secondary/50 border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 text-left focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all flex items-center justify-between"
+                                    className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 text-left focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all flex items-center justify-between"
                                 >
                                     <span className="capitalize">{formData.role}</span>
                                     <svg
