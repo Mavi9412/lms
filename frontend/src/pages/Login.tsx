@@ -34,7 +34,7 @@ const Login = () => {
             });
 
             login(access_token, userResponse.data);
-            navigate('/');
+            navigate('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to login');
         } finally {
