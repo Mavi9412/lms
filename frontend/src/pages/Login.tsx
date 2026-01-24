@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -12,6 +12,12 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Clear tokens on mount to ensure clean login state
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
