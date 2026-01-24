@@ -86,6 +86,7 @@ class User(UserBase, table=True):
 
 class UserCreate(UserBase):
     password: str
+    program_id: Optional[int] = None
 
 class Enrollment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

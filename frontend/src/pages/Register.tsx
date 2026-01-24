@@ -1,20 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Mail, Lock, User, AlertCircle, Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Shield, ArrowRight, Eye, EyeOff, BookOpen } from 'lucide-react';
 
 const Register = () => {
     const [formData, setFormData] = useState({
         full_name: '',
         email: '',
         password: '',
-        role: 'student'
+        password: '',
+        role: 'student',
+        program_id: ''
     });
+    const [programs, setPrograms] = useState<any[]>([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchPrograms = async () => {
+            try {
+                const response = await api.get('/academic/programs');
+                setPrograms(response.data);
+                // Select first program by default if available
+                if (response.data.length > 0) {
+                    setFormData(prev => ({ ...prev, program_id: response.data[0].id }));
+                }
+            } catch (error) {
+                console.error('Failed to fetch programs', error);
+            }
+        };
+        fetchPrograms();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
