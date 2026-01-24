@@ -1,8 +1,9 @@
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from database import engine
 from models import Department, Program, Semester, Course, Section
 
 def seed_academic():
+    SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         # 1. Departments
         cs_dept = session.exec(select(Department).where(Department.code == "CS")).first()
