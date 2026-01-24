@@ -8,7 +8,6 @@ const Register = () => {
         full_name: '',
         email: '',
         password: '',
-        password: '',
         role: 'student',
         program_id: ''
     });
@@ -16,7 +15,6 @@ const Register = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -125,6 +123,32 @@ const Register = () => {
                             </button>
                         </div>
                     </div>
+
+                    {/* Program Selection for Students */}
+                    {formData.role === 'student' && (
+                        <div>
+                            <label className="block text-sm font-medium text-text-secondary mb-2">Program</label>
+                            <div className="relative group">
+                                <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary w-5 h-5 group-focus-within:text-primary transition-colors" />
+                                <select
+                                    className="w-full bg-bg-secondary border border-white/10 text-text-primary rounded-lg py-3 pl-10 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600 appearance-none"
+                                    value={formData.program_id}
+                                    onChange={(e) => setFormData({ ...formData, program_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="" disabled>Select your program</option>
+                                    {programs.map((program) => (
+                                        <option key={program.id} value={program.id} className="bg-bg-primary text-text-primary">
+                                            {program.name} ({program.code})
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-secondary"><path d="m6 9 6 6 6-6" /></svg>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className={isDropdownOpen ? 'relative z-50' : 'relative'}>
                         <label className="block text-sm font-medium text-text-secondary mb-2">Role</label>
