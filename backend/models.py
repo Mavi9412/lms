@@ -44,6 +44,12 @@ class Course(SQLModel, table=True):
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
 
+class CourseCreate(SQLModel):
+    title: str
+    code: str
+    credit_hours: int = 3
+    department_id: int
+
 class Section(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str # e.g. "Section A"
