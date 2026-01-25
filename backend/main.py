@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlmodel import SQLModel
 from database import engine
-from routers import auth, courses
+from routers import auth, courses, academic
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
