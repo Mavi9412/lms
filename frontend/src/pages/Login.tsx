@@ -41,7 +41,13 @@ const Login = () => {
             });
 
             login(access_token, userResponse.data);
-            navigate('/dashboard');
+
+            // Redirect based on role
+            if (userResponse.data.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to login');
         } finally {

@@ -13,9 +13,15 @@ import {
     Plus,
     Edit,
     Trash2,
-    UserCheck
+    UserCheck,
+    FileText,
+    GraduationCap,
+    Upload
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
+import CreateAssignmentModal from '../components/CreateAssignmentModal';
+import SubmitAssignmentModal from '../components/SubmitAssignmentModal';
+import GradeSubmissionModal from '../components/GradeSubmissionModal';
 
 interface Teacher {
     id: number;
@@ -30,6 +36,14 @@ interface Lesson {
     order: number;
     course_id: number;
     created_at: string;
+}
+
+interface Assignment {
+    id: number;
+    title: string;
+    description: string;
+    due_date: string;
+    max_points: number;
 }
 
 interface CourseDetail {
@@ -49,16 +63,27 @@ const CourseDetails = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [course, setCourse] = useState<CourseDetail | null>(null);
+    const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedLessons, setExpandedLessons] = useState<Set<number>>(new Set());
     const [enrolling, setEnrolling] = useState(false);
+
+    // Tabs
+    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'grades'>('lessons');
 
     // Edit Modal State
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+    // Assignment Modals
+    const [isCreateAssignModalOpen, setIsCreateAssignModalOpen] = useState(false);
+    const [isSubmitAssignModalOpen, setIsSubmitAssignModalOpen] = useState(false);
+    const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
+    const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+
     useEffect(() => {
         fetchCourseDetails();
+        fetchAssignments();
     }, [id]);
 
     const fetchCourseDetails = async () => {
@@ -69,6 +94,15 @@ const CourseDetails = () => {
             console.error('Failed to fetch course details', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAssignments = async () => {
+        try {
+            const response = await api.get(`/assignments/course/${id}`);
+            setAssignments(response.data);
+        } catch (error) {
+            console.error('Failed to fetch assignments', error);
         }
     };
 
@@ -142,7 +176,7 @@ const CourseDetails = () => {
         );
     }
 
-    const isOwner = user?.role === 'admin';
+    const isOwner = user?.role === 'admin' || (user?.role === 'teacher' && course.teacher_id === user.id);
     const isStudent = user?.role === 'student';
 
     return (
@@ -158,6 +192,43 @@ const CourseDetails = () => {
                 courseId={id}
                 onLessonUpdated={fetchCourseDetails}
             />
+
+            {/* Create Assignment Modal */}
+            {id && (
+                <CreateAssignmentModal
+                    isOpen={isCreateAssignModalOpen}
+                    onClose={() => setIsCreateAssignModalOpen(false)}
+                    courseId={id}
+                    onAssignmentCreated={fetchAssignments}
+                />
+            )}
+
+            {/* Grade Submission Modal */}
+            {selectedAssignment && (
+                <GradeSubmissionModal
+                    isOpen={isGradeModalOpen}
+                    onClose={() => {
+                        setIsGradeModalOpen(false);
+                        setSelectedAssignment(null);
+                    }}
+                    assignmentId={selectedAssignment.id}
+                    assignmentTitle={selectedAssignment.title}
+                />
+            )}
+
+            {/* Submit Assignment Modal */}
+            {selectedAssignment && (
+                <SubmitAssignmentModal
+                    isOpen={isSubmitAssignModalOpen}
+                    onClose={() => {
+                        setIsSubmitAssignModalOpen(false);
+                        setSelectedAssignment(null);
+                    }}
+                    assignmentId={selectedAssignment.id}
+                    assignmentTitle={selectedAssignment.title}
+                    onSubmitted={() => alert('Assignment submitted successfully!')}
+                />
+            )}
 
             {/* Back Button */}
             <button
@@ -190,36 +261,13 @@ const CourseDetails = () => {
                                     <p className="font-semibold">{course.teacher.full_name}</p>
                                 </div>
                             </div>
-
                             <div className="flex items-center gap-2">
                                 <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center">
                                     <Users className="w-5 h-5 text-secondary" />
                                 </div>
                                 <div>
-                                    <p className="text-text-secondary text-xs">Enrolled Students</p>
+                                    <p className="text-text-secondary text-xs">Enrolled</p>
                                     <p className="font-semibold">{course.enrollment_count}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                    <BookOpen className="w-5 h-5 text-green-500" />
-                                </div>
-                                <div>
-                                    <p className="text-text-secondary text-xs">Total Lessons</p>
-                                    <p className="font-semibold">{course.lessons.length}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                    <Clock className="w-5 h-5 text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-text-secondary text-xs">Created</p>
-                                    <p className="font-semibold">
-                                        {new Date(course.created_at).toLocaleDateString()}
-                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -235,130 +283,166 @@ const CourseDetails = () => {
                                             <CheckCircle className="w-5 h-5" />
                                             <span className="font-medium">Enrolled</span>
                                         </div>
-                                        <button
-                                            onClick={handleUnenroll}
-                                            disabled={enrolling}
-                                            className="btn bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
-                                        >
+                                        <button onClick={handleUnenroll} disabled={enrolling} className="btn bg-red-500/10 text-red-500 border border-red-500/20">
                                             {enrolling ? 'Processing...' : 'Unenroll'}
                                         </button>
                                     </div>
                                 ) : (
-                                    <button
-                                        onClick={handleEnroll}
-                                        disabled={enrolling}
-                                        className="btn btn-primary shadow-lg shadow-primary/25"
-                                    >
+                                    <button onClick={handleEnroll} disabled={enrolling} className="btn btn-primary shadow-lg shadow-primary/25">
                                         {enrolling ? 'Enrolling...' : 'Enroll Now'}
                                     </button>
                                 )}
                             </>
                         )}
-
-                        {isOwner && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-3 rounded-lg border border-primary/20">
-                                    <UserCheck className="w-5 h-5" />
-                                    <span className="font-medium">You Own This Course</span>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Lessons Section */}
-            <div className="glass rounded-2xl p-8 border border-white/5">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold flex items-center gap-3">
-                        <BookOpen className="w-7 h-7 text-primary" />
-                        Course Lessons
-                    </h2>
-                    {isOwner && (
-                        <button className="btn btn-primary flex items-center gap-2 text-sm">
-                            <Plus className="w-4 h-4" />
-                            Add Lesson
-                        </button>
-                    )}
-                </div>
+            {/* Tabs */}
+            <div className="flex items-center gap-4 border-b border-white/10 mb-8 overflow-x-auto">
+                <button
+                    onClick={() => setActiveTab('lessons')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'lessons' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    Lessons
+                </button>
+                <button
+                    onClick={() => setActiveTab('assignments')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'assignments' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <FileText className="w-4 h-4" />
+                    Assignments
+                </button>
+                {isStudent && (
+                    <button
+                        onClick={() => setActiveTab('grades')}
+                        className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'grades' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                    >
+                        <GraduationCap className="w-4 h-4" />
+                        Grades
+                    </button>
+                )}
+            </div>
 
-                {course.lessons.length === 0 ? (
-                    <div className="text-center py-12 text-text-secondary">
-                        <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                        <p className="text-lg font-medium">No lessons available yet</p>
-                        {isOwner && <p className="text-sm mt-2">Click "Add Lesson" to create the first lesson</p>}
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {course.lessons.map((lesson, index) => {
-                            const isExpanded = expandedLessons.has(lesson.id);
-                            return (
-                                <div
-                                    key={lesson.id}
-                                    className="bg-bg-secondary/30 border border-white/5 rounded-xl overflow-hidden transition-all hover:border-primary/30"
-                                >
-                                    <div
-                                        onClick={() => toggleLesson(lesson.id)}
-                                        className="flex items-center justify-between p-5 cursor-pointer group"
-                                    >
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                                                {index + 1}
+            {/* Tab Content */}
+            <div className="min-h-[300px]">
+                {activeTab === 'lessons' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <BookOpen className="w-7 h-7 text-primary" />
+                                Course Lessons
+                            </h2>
+                            {isOwner && (
+                                <button className="btn btn-primary flex items-center gap-2 text-sm">
+                                    <Plus className="w-4 h-4" />
+                                    Add Lesson
+                                </button>
+                            )}
+                        </div>
+                        {course.lessons.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No lessons available yet.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {course.lessons.map((lesson, index) => (
+                                    <div key={lesson.id} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-5">
+                                        <div onClick={() => toggleLesson(lesson.id)} className="flex items-center justify-between cursor-pointer">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{index + 1}</div>
+                                                <h3 className="font-semibold text-lg">{lesson.title}</h3>
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                                                    {lesson.title}
-                                                </h3>
-                                                <p className="text-xs text-text-secondary mt-1">
-                                                    Created {new Date(lesson.created_at).toLocaleDateString()}
-                                                </p>
-                                            </div>
+                                            {expandedLessons.has(lesson.id) ? <ChevronUp /> : <ChevronDown />}
                                         </div>
+                                        {expandedLessons.has(lesson.id) && (
+                                            <div className="mt-4 p-4 bg-bg-primary/50 rounded-lg text-text-secondary">
+                                                {lesson.content}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                                        <div className="flex items-center gap-3">
-                                            {isOwner && (
-                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingLesson(lesson);
-                                                            setIsEditModalOpen(true);
-                                                        }}
-                                                        className="p-2 hover:bg-blue-500/20 rounded-lg text-blue-500 transition-colors"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDeleteLesson(lesson.id);
-                                                        }}
-                                                        className="p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                {activeTab === 'assignments' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <FileText className="w-7 h-7 text-primary" />
+                                Assignments
+                            </h2>
+                            {isOwner && (
+                                <button
+                                    onClick={() => setIsCreateAssignModalOpen(true)}
+                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Create Assignment
+                                </button>
+                            )}
+                        </div>
+                        {assignments.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No assignments posted yet.</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-6">
+                                {assignments.map(assignment => (
+                                    <div key={assignment.id} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-6 hover:border-primary/30 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 className="text-xl font-bold mb-2">{assignment.title}</h3>
+                                                <p className="text-text-secondary mb-4">{assignment.description}</p>
+                                                <div className="flex items-center gap-4 text-sm text-text-secondary">
+                                                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                                                    <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4" /> Points: {assignment.max_points}</span>
                                                 </div>
+                                            </div>
+                                            {isOwner && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedAssignment(assignment);
+                                                        setIsGradeModalOpen(true);
+                                                    }}
+                                                    className="btn bg-white/5 hover:bg-white/10 text-white border border-white/10 flex items-center gap-2 text-sm"
+                                                >
+                                                    <Users className="w-4 h-4" />
+                                                    View Submissions
+                                                </button>
                                             )}
-                                            {isExpanded ? (
-                                                <ChevronUp className="w-5 h-5 text-primary" />
-                                            ) : (
-                                                <ChevronDown className="w-5 h-5 text-text-secondary group-hover:text-primary transition-colors" />
+                                            {course.is_enrolled && isStudent && (
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedAssignment(assignment);
+                                                        setIsSubmitAssignModalOpen(true);
+                                                    }}
+                                                    className="btn btn-secondary flex items-center gap-2 text-sm"
+                                                >
+                                                    <Upload className="w-4 h-4" />
+                                                    Submit Work
+                                                </button>
                                             )}
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                                    {isExpanded && (
-                                        <div className="px-5 pb-5 pt-0 border-t border-white/5 animate-in slide-in-from-top-2 duration-200">
-                                            <div className="mt-4 p-4 bg-bg-primary/50 rounded-lg">
-                                                <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">
-                                                    {lesson.content}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                {activeTab === 'grades' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <GraduationCap className="w-7 h-7 text-primary" />
+                            My Grades
+                        </h2>
+                        <div className="text-center py-8 text-text-secondary">
+                            <p>No grades available yet.</p>
+                        </div>
                     </div>
                 )}
             </div>

@@ -1,6 +1,12 @@
 // import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
+import AdminLayout from './layouts/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminPolicies from './pages/admin/AdminPolicies';
+import AdminAcademic from './pages/admin/AdminAcademic';
+import AdminAllocations from './pages/admin/AdminAllocations';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -22,6 +28,16 @@ function App() {
         <div className="app-container">
           <Routes>
             <Route element={<Layout />}>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="policies" element={<AdminPolicies />} />
+                <Route path="academic" element={<AdminAcademic />} />
+                <Route path="allocations" element={<AdminAllocations />} />
+                {/* <Route path="policies" element={<AdminPolicies />} /> */}
+              </Route>
+
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

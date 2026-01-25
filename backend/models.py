@@ -43,6 +43,7 @@ class Course(SQLModel, table=True):
     
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
+    assignments: List["Assignment"] = Relationship(back_populates="course")
 
 class CourseCreate(SQLModel):
     title: str
@@ -83,6 +84,7 @@ class User(UserBase, table=True):
     # Relationships
     teaching_sections: List[Section] = Relationship(back_populates="teacher")
     enrollments: List["Enrollment"] = Relationship(back_populates="student")
+    submissions: List["Submission"] = Relationship(back_populates="student")
 
 class UserCreate(UserBase):
     password: str
@@ -98,3 +100,64 @@ class Enrollment(SQLModel, table=True):
     student: User = Relationship(back_populates="enrollments")
     section: Section = Relationship(back_populates="enrollments")
 
+# --- Assignments & Submissions ---
+
+class Assignment(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: str
+    due_date: datetime
+    max_points: int = 100
+    course_id: int = Field(foreign_key="course.id")
+    
+    course: Course = Relationship(back_populates="assignments")
+    submissions: List["Submission"] = Relationship(back_populates="assignment")
+
+class AssignmentCreate(SQLModel):
+    title: str
+    description: str
+    due_date: datetime
+    max_points: int = 100
+    course_id: int
+
+class Submission(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    assignment_id: int = Field(foreign_key="assignment.id")
+    student_id: int = Field(foreign_key="user.id")
+    content: str # Taking text or link for simplicity
+    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    grade: Optional[float] = None
+    feedback: Optional[str] = None
+    
+    assignment: Assignment = Relationship(back_populates="submissions")
+    student: User = Relationship(back_populates="submissions")
+
+class SubmissionCreate(SQLModel):
+    content: str
+
+class GradeSubmission(SQLModel):
+    grade: float
+    feedback: Optional[str] = None
+
+
+# --- Admin & Policies ---
+
+class AttendancePolicy(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    min_percentage: float = 75.0
+    late_tolerance_minutes: int = 15
+    is_active: bool = True
+
+class GradingScale(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    grade_letter: str # e.g. "A"
+    min_percentage: float # e.g. 90.0
+    gpa_point: float # e.g. 4.0
+
+class AuditLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    action: str # e.g. "GRADE_CHANGE"
+    performed_by: int = Field(foreign_key="user.id")
+    target_id: Optional[int] = None # ID of the object changed
+    details: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
