@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
-from models import Course, CourseCreate, User, Role, Enrollment, Section
+from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, Semester, Department
+from datetime import datetime
 from auth import get_current_user
 
 router = APIRouter(
@@ -33,11 +34,33 @@ def create_course(
         raise HTTPException(status_code=403, detail="Only teachers and admins can create courses")
     
     db_course = Course.model_validate(course)
-    # Teacher assignment is now done via Section, but Course still holds department.
-    # We might need to adjust logic here, but for now allow creating the course object.
     session.add(db_course)
     session.commit()
     session.refresh(db_course)
+
+    # Automatically create "Section A" for the current/default semester
+    # For now, we'll try to find an active semester, or create a dummy one if none exists
+    semester = session.exec(select(Semester).where(Semester.is_active == True)).first()
+    if not semester:
+        # Fallback: Find ANY semester
+        semester = session.exec(select(Semester)).first()
+        if not semester:
+            # Create a default semester
+             semester = Semester(name="Fall 2024", is_active=True)
+             session.add(semester)
+             session.commit()
+             session.refresh(semester)
+    
+    # Create Section A
+    section = Section(
+        name="Section A",
+        course_id=db_course.id,
+        semester_id=semester.id,
+        teacher_id=current_user.id if current_user.role == Role.teacher else None
+    )
+    session.add(section)
+    session.commit()
+
     return db_course
 
 @router.delete("/{course_id}")
@@ -64,13 +87,23 @@ class TeacherInfo(BaseModel):
     full_name: str
     email: str
 
+class LessonResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    order: int
+    created_at: datetime
+
 class CourseDetailResponse(BaseModel):
     id: int
     title: str
     description: str = "" # Added default
     created_at: str = "" # Placeholder
     is_enrolled: bool = False
+    is_enrolled: bool = False
     enrollment_count: int = 0
+    teacher: Optional[TeacherInfo] = None
+    lessons: List[LessonResponse] = []
 
 # Get course details 
 @router.get("/{course_id}/details", response_model=CourseDetailResponse)
@@ -103,13 +136,85 @@ def get_course_details(
         .where(Section.course_id == course_id)
     ).all())
     
+    # Find the teacher for Section A (default)
+    section_a = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+    teacher_info = None
+    if section_a and section_a.teacher:
+         teacher_info = TeacherInfo(id=section_a.teacher.id, full_name=section_a.teacher.full_name, email=section_a.teacher.email)
+    
+    # Get Lessons
+    lessons = session.exec(select(Lesson).where(Lesson.course_id == course_id).order_by(Lesson.order)).all()
+    lesson_responses = [LessonResponse(id=l.id, title=l.title, content=l.content, order=l.order, created_at=l.created_at) for l in lessons]
+
     return CourseDetailResponse(
         id=course.id,
         title=course.title,
-        description=f"{course.code} - {course.credit_hours} Credits", 
+        description=course.description or f"{course.code} - {course.credit_hours} Credits", 
         is_enrolled=enrollment is not None,
-        enrollment_count=enrollment_count
+        enrollment_count=enrollment_count,
+        teacher=teacher_info,
+        lessons=lesson_responses
     )
+
+# --- Lessons CRUD ---
+
+@router.post("/{course_id}/lessons", response_model=Lesson)
+def create_lesson(
+    course_id: int,
+    lesson: LessonCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    # Check permissions (must be teacher of the course or admin)
+    # Simplified: Check if user is the teacher of Section A or Admin
+    is_authorized = False
+    if current_user.role == Role.admin:
+        is_authorized = True
+    else:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if section and section.teacher_id == current_user.id:
+            is_authorized = True
+            
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to add lessons to this course")
+
+    db_lesson = Lesson.model_validate(lesson)
+    db_lesson.course_id = course_id # Ensure course_id matches URL
+    session.add(db_lesson)
+    session.commit()
+    session.refresh(db_lesson)
+    return db_lesson
+
+@router.delete("/{course_id}/lessons/{lesson_id}")
+def delete_lesson(
+    course_id: int,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    lesson = session.get(Lesson, lesson_id)
+    if not lesson or lesson.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+        
+    # Check permissions
+    is_authorized = False
+    if current_user.role == Role.admin:
+        is_authorized = True
+    else:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if section and section.teacher_id == current_user.id:
+            is_authorized = True
+            
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to delete lessons from this course")
+
+    session.delete(lesson)
+    session.commit()
+    return {"ok": True}
 
 # Enroll in a course (Enroll in DEFAULT Section A for now)
 @router.post("/{course_id}/enroll")

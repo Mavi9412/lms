@@ -37,6 +37,7 @@ class Semester(SQLModel, table=True):
 class Course(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
+    description: Optional[str] = None
     code: str = Field(unique=True) # e.g. "CS-101"
     credit_hours: int = Field(default=3)
     department_id: int = Field(foreign_key="department.id")
@@ -44,9 +45,27 @@ class Course(SQLModel, table=True):
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
     assignments: List["Assignment"] = Relationship(back_populates="course")
+    lessons: List["Lesson"] = Relationship(back_populates="course")
+
+class Lesson(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    content: str
+    order: int = 0
+    course_id: int = Field(foreign_key="course.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    course: Course = Relationship(back_populates="lessons")
+
+class LessonCreate(SQLModel):
+    title: str
+    content: str
+    order: int = 0
+    course_id: int
 
 class CourseCreate(SQLModel):
     title: str
+    description: Optional[str] = None
     code: str
     credit_hours: int = 3
     department_id: int

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Loader2 } from 'lucide-react';
 import api from '../services/api';
 
@@ -11,11 +11,32 @@ interface CreateCourseModalProps {
 const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }: CreateCourseModalProps) => {
     const [formData, setFormData] = useState({
         title: '',
+        code: '',
         description: '',
-        level: 'Beginner'
+        credit_hours: 3,
+        department_id: 0
     });
+    const [departments, setDepartments] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchDepartments();
+        }
+    }, [isOpen]);
+
+    const fetchDepartments = async () => {
+        try {
+            const response = await api.get('/academic/departments');
+            setDepartments(response.data);
+            if (response.data.length > 0) {
+                setFormData(prev => ({ ...prev, department_id: response.data[0].id }));
+            }
+        } catch (error) {
+            console.error('Failed to fetch departments', error);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -28,7 +49,7 @@ const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }: CreateCourseMod
             await api.post('/courses/', formData);
             onCourseCreated();
             onClose();
-            setFormData({ title: '', description: '', level: 'Beginner' });
+            setFormData({ title: '', code: '', description: '', credit_hours: 3, department_id: departments[0]?.id || 0 });
         } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to create course');
         } finally {
@@ -82,21 +103,46 @@ const CreateCourseModal = ({ isOpen, onClose, onCourseCreated }: CreateCourseMod
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-text-secondary mb-1.5">Difficulty Level</label>
+                            <label className="block text-sm font-medium text-text-secondary mb-1.5">Course Code</label>
+                            <input
+                                type="text"
+                                required
+                                className="w-full bg-bg-secondary border border-white/10 rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                placeholder="e.g. CS-101"
+                                value={formData.code}
+                                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-text-secondary mb-1.5">Department</label>
                             <div className="relative">
                                 <select
                                     className="w-full bg-bg-secondary border border-white/10 rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all appearance-none cursor-pointer"
-                                    value={formData.level}
-                                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                                    value={formData.department_id}
+                                    onChange={(e) => setFormData({ ...formData, department_id: Number(e.target.value) })}
                                 >
-                                    <option value="Beginner">Beginner</option>
-                                    <option value="Intermediate">Intermediate</option>
-                                    <option value="Advanced">Advanced</option>
+                                    {departments.map(dept => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
                             </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-text-secondary mb-1.5">Credit Hours</label>
+                            <input
+                                type="number"
+                                required
+                                min="1"
+                                max="6"
+                                className="w-full bg-bg-secondary border border-white/10 rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 outline-none transition-all placeholder:text-gray-600"
+                                value={formData.credit_hours}
+                                onChange={(e) => setFormData({ ...formData, credit_hours: Number(e.target.value) })}
+                            />
                         </div>
 
                         <div className="pt-2">
