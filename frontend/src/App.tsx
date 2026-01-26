@@ -5,7 +5,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminPolicies from './pages/admin/AdminPolicies';
-import AdminAcademic from './pages/admin/AdminAcademic';
+import AcademicStructure from './pages/admin/AcademicStructure';
 import AdminAllocations from './pages/admin/AdminAllocations';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -33,7 +33,7 @@ function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="policies" element={<AdminPolicies />} />
-                <Route path="academic" element={<AdminAcademic />} />
+                <Route path="academic" element={<AcademicStructure />} />
                 <Route path="allocations" element={<AdminAllocations />} />
                 {/* <Route path="policies" element={<AdminPolicies />} /> */}
               </Route>
