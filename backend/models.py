@@ -180,3 +180,28 @@ class AuditLog(SQLModel, table=True):
     target_id: Optional[int] = None # ID of the object changed
     details: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+# --- Attendance ---
+
+class AttendanceStatus(str, Enum):
+    present = "present"
+    absent = "absent"
+    late = "late"
+
+class Attendance(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    section_id: int = Field(foreign_key="section.id")
+    student_id: int = Field(foreign_key="user.id")
+    date: datetime
+    status: AttendanceStatus = Field(default=AttendanceStatus.present)
+    marked_by: int = Field(foreign_key="user.id")  # Teacher who marked
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class AttendanceCreate(SQLModel):
+    student_id: int
+    status: AttendanceStatus = AttendanceStatus.present
+
+class AttendanceMarkRequest(SQLModel):
+    date: str  # ISO format date string
+    records: List[AttendanceCreate]
+

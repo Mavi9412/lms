@@ -14,6 +14,7 @@ import Courses from './pages/Courses';
 import CourseDetails from './pages/CourseDetails';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import Attendance from './pages/Attendance';
 import { AuthProvider } from './context/AuthContext';
 
 // const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -45,6 +46,7 @@ function App() {
               <Route path="/courses/:id" element={<CourseDetails />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/attendance" element={<Attendance />} />
               {/* Example Protected Route */}
               {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
             </Route>

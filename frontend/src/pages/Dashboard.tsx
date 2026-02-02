@@ -92,7 +92,10 @@ const Dashboard = () => {
                         <h3 className="font-bold mb-4">Quick Actions</h3>
                         <div className="space-y-3">
                             {user?.role === 'teacher' ? (
-                                <button className="w-full btn btn-primary py-2.5">Create New Course</button>
+                                <>
+                                    <Link to="/attendance" className="w-full btn btn-primary py-2.5 text-center block">Take Attendance</Link>
+                                    <button className="w-full btn bg-white/5 hover:bg-white/10 border border-white/10 py-2.5">Create New Course</button>
+                                </>
                             ) : (
                                 <Link to="/courses" className="w-full btn btn-primary py-2.5 text-center block">Browse Courses</Link>
                             )}
