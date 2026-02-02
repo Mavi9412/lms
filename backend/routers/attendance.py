@@ -222,3 +222,56 @@ def get_student_attendance(
         "late": late,
         "attendance_percentage": round(percentage, 2)
     }
+
+
+# --- Get Student's Enrolled Sections ---
+@router.get("/my-enrollments")
+def get_student_enrollments(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Get all sections the current student is enrolled in"""
+    enrollments = session.exec(
+        select(Enrollment).where(Enrollment.student_id == current_user.id)
+    ).all()
+    
+    result = []
+    for enrollment in enrollments:
+        section = session.get(Section, enrollment.section_id)
+        if section:
+            result.append({
+                "id": section.id,
+                "name": section.name,
+                "course_title": section.course.title,
+                "course_code": section.course.code
+            })
+    return result
+
+
+# --- Get Student's Attendance Records ---
+@router.get("/my-records")
+def get_my_attendance_records(
+    section_id: int = None,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Get attendance records for the current student"""
+    query = select(Attendance).where(Attendance.student_id == current_user.id)
+    if section_id:
+        query = query.where(Attendance.section_id == section_id)
+    
+    records = session.exec(query.order_by(Attendance.date.desc())).all()
+    
+    result = []
+    for record in records:
+        section = session.get(Section, record.section_id)
+        result.append({
+            "id": record.id,
+            "date": record.date.isoformat(),
+            "status": record.status.value,
+            "section_name": section.name if section else "Unknown",
+            "course_title": section.course.title if section else "Unknown",
+            "course_code": section.course.code if section else "Unknown"
+        })
+    return result
+
