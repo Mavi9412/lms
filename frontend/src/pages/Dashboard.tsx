@@ -96,10 +96,15 @@ const Dashboard = () => {
                                     <Link to="/attendance" className="w-full btn btn-primary py-2.5 text-center block">Take Attendance</Link>
                                     <button className="w-full btn bg-white/5 hover:bg-white/10 border border-white/10 py-2.5">Create New Course</button>
                                 </>
+                            ) : user?.role === 'student' ? (
+                                <>
+                                    <Link to="/courses" className="w-full btn btn-primary py-2.5 text-center block">Browse Courses</Link>
+                                    <Link to="/my-attendance" className="w-full btn bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 text-center block">View Attendance</Link>
+                                </>
                             ) : (
                                 <Link to="/courses" className="w-full btn btn-primary py-2.5 text-center block">Browse Courses</Link>
                             )}
-                            <button className="w-full btn bg-white/5 hover:bg-white/10 border border-white/10 py-2.5">View Profile</button>
+                            <Link to="/profile" className="w-full btn bg-white/5 hover:bg-white/10 border border-white/10 py-2.5 text-center block">View Profile</Link>
                         </div>
                     </div>
                 </div>
