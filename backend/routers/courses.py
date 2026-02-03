@@ -3,9 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
-from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, Semester, Department
+from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, Semester, Department, CourseMaterial
 from datetime import datetime
 from auth import get_current_user
+import shutil
+import os
+from fastapi import UploadFile, File
 
 router = APIRouter(
     prefix="/courses",
