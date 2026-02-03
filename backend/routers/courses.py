@@ -244,3 +244,95 @@ def enroll_in_course(
     session.add(enrollment)
     session.commit()
     return {"ok": True}
+
+# --- Course Materials (Uploads) ---
+
+@router.post("/{course_id}/materials", response_model=CourseMaterial)
+def upload_course_material(
+    course_id: int,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Check permissions (Teacher of the course or Admin)
+    is_authorized = False
+    if current_user.role == Role.admin:
+        is_authorized = True
+    else:
+        # Check if user is teacher of any section of this course (simplified to Section A for now as per other endpoints)
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if section and section.teacher_id == current_user.id:
+            is_authorized = True
+    
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to upload materials to this course")
+
+    # Save file
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Generate unique filename
+    file_location = f"{upload_dir}/{course_id}_{int(datetime.utcnow().timestamp())}_{file.filename}"
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    material = CourseMaterial(
+        title=file.filename,
+        file_path=file_location,
+        course_id=course_id
+    )
+    session.add(material)
+    session.commit()
+    session.refresh(material)
+    return material
+
+@router.get("/{course_id}/materials", response_model=List[CourseMaterial])
+def get_course_materials(
+    course_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Check if course exists
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+        
+    # Anyone authenticated can view materials for now
+    
+    materials = session.exec(select(CourseMaterial).where(CourseMaterial.course_id == course_id)).all()
+    return materials
+
+@router.delete("/{course_id}/materials/{material_id}")
+def delete_course_material(
+    course_id: int,
+    material_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    material = session.get(CourseMaterial, material_id)
+    if not material or material.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Material not found")
+        
+    # Check permissions
+    is_authorized = False
+    if current_user.role == Role.admin:
+        is_authorized = True
+    else:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if section and section.teacher_id == current_user.id:
+            is_authorized = True
+            
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to delete materials from this course")
+
+    # Delete file from disk
+    if os.path.exists(material.file_path):
+        os.remove(material.file_path)
+
+    session.delete(material)
+    session.commit()
+    return {"ok": True}

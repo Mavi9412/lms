@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from sqlmodel import SQLModel
 from database import engine
@@ -33,6 +34,8 @@ app.include_router(academic.router)
 app.include_router(assignments.router)
 app.include_router(admin.router)
 app.include_router(attendance.router)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():

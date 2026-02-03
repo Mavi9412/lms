@@ -16,12 +16,15 @@ import {
     UserCheck,
     FileText,
     GraduationCap,
-    Upload
+    Upload,
+    File,
+    Download
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 import CreateAssignmentModal from '../components/CreateAssignmentModal';
 import SubmitAssignmentModal from '../components/SubmitAssignmentModal';
 import GradeSubmissionModal from '../components/GradeSubmissionModal';
+import UploadMaterialModal from '../components/UploadMaterialModal';
 
 interface Teacher {
     id: number;
@@ -81,9 +84,14 @@ const CourseDetails = () => {
     const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
     const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
 
+    // Materials
+    const [materials, setMaterials] = useState<any[]>([]);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
     useEffect(() => {
         fetchCourseDetails();
         fetchAssignments();
+        fetchMaterials();
     }, [id]);
 
     const fetchCourseDetails = async () => {
