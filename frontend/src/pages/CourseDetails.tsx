@@ -72,7 +72,7 @@ const CourseDetails = () => {
     const [enrolling, setEnrolling] = useState(false);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'grades'>('lessons');
+    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'grades'>('lessons');
 
     // Edit Modal State
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -111,6 +111,25 @@ const CourseDetails = () => {
             setAssignments(response.data);
         } catch (error) {
             console.error('Failed to fetch assignments', error);
+        }
+    };
+
+    const fetchMaterials = async () => {
+        try {
+            const response = await api.get(`/courses/${id}/materials`);
+            setMaterials(response.data);
+        } catch (error) {
+            console.error('Failed to fetch materials', error);
+        }
+    };
+
+    const handleDeleteMaterial = async (materialId: number) => {
+        if (!confirm('Are you sure you want to delete this file?')) return;
+        try {
+            await api.delete(`/courses/${id}/materials/${materialId}`);
+            fetchMaterials();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to delete material');
         }
     };
 
@@ -238,6 +257,16 @@ const CourseDetails = () => {
                 />
             )}
 
+            {/* Upload Material Modal */}
+            {id && (
+                <UploadMaterialModal
+                    isOpen={isUploadModalOpen}
+                    onClose={() => setIsUploadModalOpen(false)}
+                    courseId={parseInt(id)}
+                    onMaterialUploaded={fetchMaterials}
+                />
+            )}
+
             {/* Back Button */}
             <button
                 onClick={() => navigate('/courses')}
@@ -321,6 +350,13 @@ const CourseDetails = () => {
                 >
                     <FileText className="w-4 h-4" />
                     Assignments
+                </button>
+                <button
+                    onClick={() => setActiveTab('materials')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'materials' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <FileText className="w-4 h-4" />
+                    Materials
                 </button>
                 {isStudent && (
                     <button
@@ -432,6 +468,69 @@ const CourseDetails = () => {
                                                 >
                                                     <Upload className="w-4 h-4" />
                                                     Submit Work
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                )}
+
+                {activeTab === 'materials' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <FileText className="w-7 h-7 text-primary" />
+                                Course Materials
+                            </h2>
+                            {isOwner && (
+                                <button
+                                    onClick={() => setIsUploadModalOpen(true)}
+                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Upload Material
+                                </button>
+                            )}
+                        </div>
+                        {materials.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No specific course materials uploaded yet.</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-4">
+                                {materials.map((material) => (
+                                    <div key={material.id} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                <File className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">{material.title}</h3>
+                                                <p className="text-xs text-text-secondary">Uploaded: {new Date(material.uploaded_at).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <a
+                                                href={`http://localhost:8000/${material.file_path}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="btn bg-white/5 hover:bg-white/10 text-white border border-white/10 p-2 rounded-lg"
+                                                title="Download"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </a>
+                                            {isOwner && (
+                                                <button
+                                                    onClick={() => handleDeleteMaterial(material.id)}
+                                                    className="btn bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/10 p-2 rounded-lg"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             )}
                                         </div>
