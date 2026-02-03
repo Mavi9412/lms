@@ -45,7 +45,18 @@ class Course(SQLModel, table=True):
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
     assignments: List["Assignment"] = Relationship(back_populates="course")
+    assignments: List["Assignment"] = Relationship(back_populates="course")
     lessons: List["Lesson"] = Relationship(back_populates="course")
+    materials: List["CourseMaterial"] = Relationship(back_populates="course")
+
+class CourseMaterial(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    file_path: str
+    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    course_id: int = Field(foreign_key="course.id")
+    
+    course: Course = Relationship(back_populates="materials")
 
 class Lesson(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
