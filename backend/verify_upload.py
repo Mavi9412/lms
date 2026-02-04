@@ -9,7 +9,7 @@ UPLOAD_URL = f"{BASE_URL}/courses/{{}}/materials"
 
 # Test Credentials (should exist from seeding)
 EMAIL = "teacher@lms.com"
-PASSWORD = "password123"
+PASSWORD = "teacher123"
 
 def verify_upload():
     # 1. Login
