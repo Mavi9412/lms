@@ -478,7 +478,7 @@ const CourseDetails = () => {
                     </div>
                 )}
 
-                )}
+
 
                 {activeTab === 'materials' && (
                     <div className="glass rounded-2xl p-8 border border-white/5">
