@@ -346,3 +346,87 @@ class RubricCreate(SQLModel):
     course_id: Optional[int] = None
     criteria: List[RubricCriterionCreate] = []
 
+# --- Announcements ---
+
+class Announcement(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    course_id: int = Field(foreign_key="course.id")
+    title: str
+    content: str  # Can be HTML
+    created_by: int = Field(foreign_key="user.id")
+    is_pinned: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    course: Course = Relationship()
+    creator: User = Relationship()
+
+class AnnouncementCreate(SQLModel):
+    course_id: int
+    title: str
+    content: str
+    is_pinned: bool = False
+
+# --- Notifications ---
+
+class NotificationType(str, Enum):
+    assignment_created = "assignment_created"
+    quiz_created = "quiz_created"
+    assignment_graded = "assignment_graded"
+    quiz_graded = "quiz_graded"
+    announcement_posted = "announcement_posted"
+    discussion_reply = "discussion_reply"
+
+class Notification(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    notification_type: NotificationType
+    title: str
+    content: str
+    link: Optional[str] = None  # URL to navigate to
+    is_read: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    user: User = Relationship()
+
+class NotificationCreate(SQLModel):
+    user_id: int
+    notification_type: NotificationType
+    title: str
+    content: str
+    link: Optional[str] = None
+
+# --- Discussion Forums ---
+
+class DiscussionThread(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    course_id: int = Field(foreign_key="course.id")
+    title: str
+    content: str
+    created_by: int = Field(foreign_key="user.id")
+    is_pinned: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    course: Course = Relationship()
+    creator: User = Relationship()
+    replies: List["ThreadReply"] = Relationship(back_populates="thread", cascade_delete=True)
+
+class ThreadReply(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    thread_id: int = Field(foreign_key="discussionthread.id", ondelete="CASCADE")
+    content: str
+    created_by: int = Field(foreign_key="user.id")
+    upvotes: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    thread: DiscussionThread = Relationship(back_populates="replies")
+    creator: User = Relationship()
+
+class DiscussionThreadCreate(SQLModel):
+    course_id: int
+    title: str
+    content: str
+
+class ThreadReplyCreate(SQLModel):
+    thread_id: int
+    content: str
+

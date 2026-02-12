@@ -67,7 +67,7 @@ const SubmitAssignmentModal = ({ isOpen, onClose, assignmentId, assignmentTitle,
             onClose();
             setContent('');
             setFile(null);
-        } catch (err any) {
+        } catch (err: any) {
             setError(err.response?.data?.detail || 'Failed to submit assignment');
         } finally {
             setLoading(false);
@@ -103,8 +103,8 @@ const SubmitAssignmentModal = ({ isOpen, onClose, assignmentId, assignmentTitle,
                         <label className="block text-sm font-medium text-text-secondary mb-2">Upload File (Optional)</label>
                         <div
                             className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${dragActive
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-white/10 hover:border-white/20'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-white/10 hover:border-white/20'
                                 }`}
                             onDragEnter={handleDrag}
                             onDragLeave={handleDrag}
