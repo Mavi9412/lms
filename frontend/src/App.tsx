@@ -16,6 +16,11 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
 import MyAttendance from './pages/MyAttendance';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import TakeQuiz from './pages/TakeQuiz';
+import QuizResults from './pages/QuizResults';
+import Gradebook from './pages/Gradebook';
 import { AuthProvider } from './context/AuthContext';
 
 // const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -43,12 +48,17 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetails />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/attendance" element={<Attendance />} />
               <Route path="/my-attendance" element={<MyAttendance />} />
+              <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
+              <Route path="/quiz-results/:attemptId" element={<QuizResults />} />
+              <Route path="/gradebook/:courseId" element={<Gradebook />} />
               {/* Example Protected Route */}
               {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
             </Route>
