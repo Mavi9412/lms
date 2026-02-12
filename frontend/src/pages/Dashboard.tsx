@@ -1,7 +1,21 @@
-
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, GraduationCap, Users, Clock, ArrowRight, PlayCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import NotificationBell from '../components/NotificationBell';
+import {
+    BookOpen,
+    GraduationCap,
+    Users,
+    Clock,
+    ArrowRight,
+    PlayCircle,
+    FileText,
+    Calendar,
+    Plus,
+    LogOut,
+    User,
+    Settings
+} from 'lucide-react';
 
 const Dashboard = () => {
     const { user } = useAuth();

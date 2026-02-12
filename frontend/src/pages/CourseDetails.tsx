@@ -20,7 +20,11 @@ import {
     File,
     Download,
     Brain,
-    PlayCircle
+    PlayCircle,
+    Megaphone,
+    MessageSquare,
+    Pin,
+    ThumbsUp
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 import CreateAssignmentModal from '../components/CreateAssignmentModal';
@@ -28,6 +32,8 @@ import SubmitAssignmentModal from '../components/SubmitAssignmentModal';
 import GradeSubmissionModal from '../components/GradeSubmissionModal';
 import UploadMaterialModal from '../components/UploadMaterialModal';
 import CreateQuizModal from '../components/CreateQuizModal';
+import CreateAnnouncementModal from '../components/CreateAnnouncementModal';
+import CreateThreadModal from '../components/CreateThreadModal';
 
 interface Teacher {
     id: number;
@@ -75,7 +81,7 @@ const CourseDetails = () => {
     const [enrolling, setEnrolling] = useState(false);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'quizzes' | 'grades'>('lessons');
+    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'quizzes' | 'announcements' | 'discussions' | 'grades'>('lessons');
 
     // Edit Modal State
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -95,11 +101,21 @@ const CourseDetails = () => {
     const [quizzes, setQuizzes] = useState<any[]>([]);
     const [isCreateQuizModalOpen, setIsCreateQuizModalOpen] = useState(false);
 
+    // Announcements
+    const [announcements, setAnnouncements] = useState<any[]>([]);
+    const [isCreateAnnouncementModalOpen, setIsCreateAnnouncementModalOpen] = useState(false);
+
+    // Discussions
+    const [threads, setThreads] = useState<any[]>([]);
+    const [isCreateThreadModalOpen, setIsCreateThreadModalOpen] = useState(false);
+
     useEffect(() => {
         fetchCourseDetails();
         fetchAssignments();
         fetchMaterials();
         fetchQuizzes();
+        fetchAnnouncements();
+        fetchThreads();
     }, [id]);
 
     const fetchCourseDetails = async () => {
@@ -137,6 +153,24 @@ const CourseDetails = () => {
             setQuizzes(response.data);
         } catch (error) {
             console.error('Failed to fetch quizzes', error);
+        }
+    };
+
+    const fetchAnnouncements = async () => {
+        try {
+            const response = await api.get(`/announcements/course/${id}`);
+            setAnnouncements(response.data);
+        } catch (error) {
+            console.error('Failed to fetch announcements', error);
+        }
+    };
+
+    const fetchThreads = async () => {
+        try {
+            const response = await api.get(`/discussions/course/${id}`);
+            setThreads(response.data);
+        } catch (error) {
+            console.error('Failed to fetch threads', error);
         }
     };
 
@@ -294,6 +328,26 @@ const CourseDetails = () => {
                 />
             )}
 
+            {/* Create Announcement Modal */}
+            {id && (
+                <CreateAnnouncementModal
+                    isOpen={isCreateAnnouncementModalOpen}
+                    onClose={() => setIsCreateAnnouncementModalOpen(false)}
+                    courseId={parseInt(id)}
+                    onCreated={fetchAnnouncements}
+                />
+            )}
+
+            {/* Create Discussion Thread Modal */}
+            {id && (
+                <CreateThreadModal
+                    isOpen={isCreateThreadModalOpen}
+                    onClose={() => setIsCreateThreadModalOpen(false)}
+                    courseId={parseInt(id)}
+                    onCreated={fetchThreads}
+                />
+            )}
+
             {/* Back Button */}
             <button
                 onClick={() => navigate('/courses')}
@@ -384,6 +438,27 @@ const CourseDetails = () => {
                 >
                     <FileText className="w-4 h-4" />
                     Materials
+                </button>
+                <button
+                    onClick={() => setActiveTab('quizzes')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'quizzes' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <Brain className="w-4 h-4" />
+                    Quizzes
+                </button>
+                <button
+                    onClick={() => setActiveTab('announcements')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'announcements' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <Megaphone className="w-4 h-4" />
+                    Announcements
+                </button>
+                <button
+                    onClick={() => setActiveTab('discussions')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'discussions' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    Discussions
                 </button>
                 {isStudent && (
                     <button
@@ -640,6 +715,111 @@ const CourseDetails = () => {
                                                     Take Quiz
                                                 </button>
                                             ) : null}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'announcements' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <Megaphone className="w-7 h-7 text-primary" />
+                                Announcements
+                            </h2>
+                            {isOwner && (
+                                <button
+                                    onClick={() => setIsCreateAnnouncementModalOpen(true)}
+                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Post Announcement
+                                </button>
+                            )}
+                        </div>
+                        {announcements.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No announcements yet.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {announcements.map((announcement: any) => (
+                                    <div
+                                        key={announcement.id}
+                                        className={`bg-bg-secondary/30 border rounded-xl p-6 ${announcement.is_pinned
+                                                ? 'border-primary/50'
+                                                : 'border-white/5'
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                {announcement.is_pinned && (
+                                                    <Pin className="w-4 h-4 text-primary" />
+                                                )}
+                                                <h3 className="text-xl font-bold">{announcement.title}</h3>
+                                            </div>
+                                            <span className="text-sm text-text-secondary">
+                                                {new Date(announcement.created_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-text-secondary mb-3">{announcement.content}</p>
+                                        <div className="text-sm text-text-secondary">
+                                            Posted by {announcement.creator_name}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'discussions' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <MessageSquare className="w-7 h-7 text-primary" />
+                                Discussions
+                            </h2>
+                            <button
+                                onClick={() => setIsCreateThreadModalOpen(true)}
+                                className="btn btn-primary flex items-center gap-2 text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                New Thread
+                            </button>
+                        </div>
+                        {threads.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No discussion threads yet. Start a conversation!</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {threads.map((thread: any) => (
+                                    <div
+                                        key={thread.id}
+                                        className="bg-bg-secondary/30 border rounded-xl p-6 hover:border-primary/30 transition-colors border-white/5"
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className="flex items-center gap-2 flex-1">
+                                                {thread.is_pinned && (
+                                                    <Pin className="w-4 h-4 text-primary flex-shrink-0" />
+                                                )}
+                                                <h3 className="text-xl font-bold">{thread.title}</h3>
+                                            </div>
+                                            <div className="flex items-center gap-4 text-sm text-text-secondary">
+                                                <span className="flex items-center gap-1">
+                                                    <MessageSquare className="w-4 h-4" />
+                                                    {thread.replies_count || 0} replies
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p className="text-text-secondary mb-3 line-clamp-2">{thread.content}</p>
+                                        <div className="flex items-center justify-between text-sm text-text-secondary">
+                                            <span>Posted by {thread.creator_name}</span>
+                                            <span>{new Date(thread.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                 ))}
