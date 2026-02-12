@@ -111,13 +111,17 @@ class User(UserBase, table=True):
     
     program: Optional[Program] = Relationship(back_populates="students")
     
-    # Relationships
-    teaching_sections: List[Section] = Relationship(back_populates="teacher")
-    enrollments: List["Enrollment"] = Relationship(back_populates="student")
-    submissions: List["Submission"] = Relationship(back_populates="student")
+    # Relationships with cascade delete
+    teaching_sections: List[Section] = Relationship(back_populates="teacher", cascade_delete=True)
+    enrollments: List["Enrollment"] = Relationship(back_populates="student", cascade_delete=True)
+    submissions: List["Submission"] = Relationship(back_populates="student", cascade_delete=True)
 
 class UserCreate(UserBase):
     password: str
+    program_id: Optional[int] = None
+
+class UserUpdate(UserBase):
+    password: Optional[str] = None
     program_id: Optional[int] = None
 
 class Enrollment(SQLModel, table=True):

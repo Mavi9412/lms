@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Trash2, User, Shield, GraduationCap, Search } from 'lucide-react';
+import { Trash2, User, Shield, GraduationCap, Search, Plus, Edit } from 'lucide-react';
 import api from '../../services/api';
+import AddUserModal from '../../components/AddUserModal';
+import EditUserModal from '../../components/EditUserModal';
 
 interface UserData {
     id: number;
@@ -8,6 +10,7 @@ interface UserData {
     full_name: string;
     role: string;
     is_active: boolean;
+    program_id?: number;
 }
 
 const AdminUsers = () => {
@@ -15,6 +18,9 @@ const AdminUsers = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState<'all' | 'student' | 'teacher' | 'admin'>('all');
+    const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
     useEffect(() => {
         fetchUsers();
@@ -75,10 +81,13 @@ const AdminUsers = () => {
                     <h1 className="text-3xl font-bold">User Management</h1>
                     <p className="text-text-secondary">Manage system access and roles.</p>
                 </div>
-                {/* <button className="btn btn-primary flex items-center gap-2">
+                <button
+                    onClick={() => setIsAddUserModalOpen(true)}
+                    className="btn btn-primary flex items-center gap-2"
+                >
                     <Plus className="w-4 h-4" />
                     Add User
-                </button> */}
+                </button>
             </div>
 
             {/* Filters */}
@@ -99,8 +108,8 @@ const AdminUsers = () => {
                             key={role}
                             onClick={() => setFilterRole(role)}
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterRole === role
-                                    ? 'bg-primary text-white'
-                                    : 'bg-white/5 text-text-secondary hover:bg-white/10'
+                                ? 'bg-primary text-white'
+                                : 'bg-white/5 text-text-secondary hover:bg-white/10'
                                 }`}
                         >
                             {role.charAt(0).toUpperCase() + role.slice(1)}s
@@ -144,13 +153,25 @@ const AdminUsers = () => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleDelete(user.id)}
-                                            className="p-2 hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
-                                            title="Delete User"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedUser(user);
+                                                    setIsEditUserModalOpen(true);
+                                                }}
+                                                className="p-2 hover:bg-teal-500/20 text-text-secondary hover:text-teal-400 rounded-lg transition-colors"
+                                                title="Edit User"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(user.id)}
+                                                className="p-2 hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
+                                                title="Delete User"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -163,6 +184,24 @@ const AdminUsers = () => {
                     </div>
                 )}
             </div>
+
+            {/* Add User Modal */}
+            <AddUserModal
+                isOpen={isAddUserModalOpen}
+                onClose={() => setIsAddUserModalOpen(false)}
+                onUserAdded={fetchUsers}
+            />
+
+            {/* Edit User Modal */}
+            <EditUserModal
+                isOpen={isEditUserModalOpen}
+                onClose={() => {
+                    setIsEditUserModalOpen(false);
+                    setSelectedUser(null);
+                }}
+                onUserUpdated={fetchUsers}
+                user={selectedUser}
+            />
         </div>
     );
 };

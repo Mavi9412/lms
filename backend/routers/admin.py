@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from database import get_session
-from models import User, Role, Department, Program, Course, Section, Semester, AuditLog, UserCreate
+from models import User, Role, Department, Program, Course, Section, Semester, AuditLog, UserCreate, UserUpdate
 from auth import get_current_user, get_password_hash
 from typing import List, Dict, Any
 
@@ -83,6 +83,49 @@ def create_user(
     
     return new_user
 
+@router.patch("/users/{user_id}", response_model=User)
+def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check if email is being changed and if it's already taken by another user
+    if user_data.email != user.email:
+        existing = session.exec(select(User).where(User.email == user_data.email)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Update user fields
+    user.email = user_data.email
+    user.full_name = user_data.full_name
+    user.role = user_data.role
+    user.program_id = user_data.program_id
+    
+    # Update password only if provided
+    if user_data.password:
+        user.hashed_password = get_password_hash(user_data.password)
+    
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    # Audit Log
+    log = AuditLog(
+        action="UPDATE_USER",
+        performed_by=admin.id,
+        target_id=user.id,
+        details=f"Updated user {user.email}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return user
+
 @router.delete("/users/{user_id}")
 def delete_user(
     user_id: int,
@@ -92,22 +135,32 @@ def delete_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    try:
+        # Delete user - this will fail if there are foreign key constraints
+        session.delete(user)
+        session.commit()
         
-    # Soft delete or hard delete? Let's do hard delete for now but ensure cascade
-    session.delete(user)
-    session.commit()
-    
-    # Audit Log
-    log = AuditLog(
-        action="DELETE_USER",
-        performed_by=admin.id,
-        target_id=user_id,
-        details=f"Deleted user {user.email}"
-    )
-    session.add(log)
-    session.commit()
-    
-    return {"message": "User deleted"}
+        # Audit Log
+        log = AuditLog(
+            action="DELETE_USER",
+            performed_by=admin.id,
+            target_id=user_id,
+            details=f"Deleted user {user.email}"
+        )
+        session.add(log)
+        session.commit()
+        
+        return {"message": "User deleted"}
+    except Exception as e:
+        session.rollback()
+        # Check if it's a foreign key constraint error
+        if "FOREIGN KEY constraint failed" in str(e) or "foreign key constraint" in str(e).lower():
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot delete user: User has associated data (enrollments, submissions, or teaching assignments). Please remove these first or contact system administrator."
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
 # --- Academic Structure ---
 
