@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import Session, select
 from database import get_session
 from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course
@@ -57,9 +57,10 @@ def get_assignment(
 # --- Submissions ---
 
 @router.post("/{assignment_id}/submit", response_model=Submission)
-def submit_assignment(
+async def submit_assignment(
     assignment_id: int,
-    submission: SubmissionCreate,
+    content: str = "",
+    file: UploadFile = File(None),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -80,10 +81,33 @@ def submit_assignment(
     if existing:
         raise HTTPException(status_code=400, detail="Already submitted")
     
+    file_path = None
+    
+    # Handle file upload if provided
+    if file and file.filename:
+        import os
+        import shutil
+        from datetime import datetime
+        
+        upload_dir = "uploads/assignments"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = int(datetime.utcnow().timestamp())
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{assignment_id}_{current_user.id}_{timestamp}{file_extension}"
+        file_path = f"{upload_dir}/{unique_filename}"
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    
+    # Create submission
     db_submission = Submission(
         assignment_id=assignment_id,
         student_id=current_user.id,
-        content=submission.content
+        content=content if content else "",
+        file_path=file_path
     )
     session.add(db_submission)
     session.commit()
