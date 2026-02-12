@@ -154,7 +154,8 @@ class Submission(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     assignment_id: int = Field(foreign_key="assignment.id")
     student_id: int = Field(foreign_key="user.id")
-    content: str # Taking text or link for simplicity
+    content: str # Text content or link
+    file_path: Optional[str] = None # File upload path
     submitted_at: datetime = Field(default_factory=datetime.utcnow)
     grade: Optional[float] = None
     feedback: Optional[str] = None
@@ -191,6 +192,14 @@ class AuditLog(SQLModel, table=True):
     target_id: Optional[int] = None # ID of the object changed
     details: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class PasswordResetToken(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    token: str = Field(unique=True, index=True)
+    expires_at: datetime
+    used: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 # --- Attendance ---
 
