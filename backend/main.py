@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from sqlmodel import SQLModel
 from database import engine
-from routers import auth, courses, academic, assignments, admin, attendance, password_reset, gradebook
+from routers import auth, courses, academic, assignments, admin, attendance, password_reset, gradebook, quizzes, rubrics
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,6 +36,8 @@ app.include_router(assignments.router)
 app.include_router(admin.router)
 app.include_router(attendance.router)
 app.include_router(gradebook.router)
+app.include_router(quizzes.router)
+app.include_router(rubrics.router)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
