@@ -18,13 +18,16 @@ import {
     GraduationCap,
     Upload,
     File,
-    Download
+    Download,
+    Brain,
+    PlayCircle
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 import CreateAssignmentModal from '../components/CreateAssignmentModal';
 import SubmitAssignmentModal from '../components/SubmitAssignmentModal';
 import GradeSubmissionModal from '../components/GradeSubmissionModal';
 import UploadMaterialModal from '../components/UploadMaterialModal';
+import CreateQuizModal from '../components/CreateQuizModal';
 
 interface Teacher {
     id: number;
@@ -72,7 +75,7 @@ const CourseDetails = () => {
     const [enrolling, setEnrolling] = useState(false);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'grades'>('lessons');
+    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'quizzes' | 'grades'>('lessons');
 
     // Edit Modal State
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
@@ -88,10 +91,15 @@ const CourseDetails = () => {
     const [materials, setMaterials] = useState<any[]>([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
+    // Quizzes
+    const [quizzes, setQuizzes] = useState<any[]>([]);
+    const [isCreateQuizModalOpen, setIsCreateQuizModalOpen] = useState(false);
+
     useEffect(() => {
         fetchCourseDetails();
         fetchAssignments();
         fetchMaterials();
+        fetchQuizzes();
     }, [id]);
 
     const fetchCourseDetails = async () => {
@@ -120,6 +128,15 @@ const CourseDetails = () => {
             setMaterials(response.data);
         } catch (error) {
             console.error('Failed to fetch materials', error);
+        }
+    };
+
+    const fetchQuizzes = async () => {
+        try {
+            const response = await api.get(`/quizzes/course/${id}`);
+            setQuizzes(response.data);
+        } catch (error) {
+            console.error('Failed to fetch quizzes', error);
         }
     };
 
@@ -264,6 +281,16 @@ const CourseDetails = () => {
                     onClose={() => setIsUploadModalOpen(false)}
                     courseId={parseInt(id)}
                     onMaterialUploaded={fetchMaterials}
+                />
+            )}
+
+            {/* Create Quiz Modal */}
+            {id && (
+                <CreateQuizModal
+                    isOpen={isCreateQuizModalOpen}
+                    onClose={() => setIsCreateQuizModalOpen(false)}
+                    courseId={parseInt(id)}
+                    onCreated={fetchQuizzes}
                 />
             )}
 
@@ -533,6 +560,86 @@ const CourseDetails = () => {
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'quizzes' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <Brain className="w-7 h-7 text-primary" />
+                                Quizzes
+                            </h2>
+                            {isOwner && (
+                                <button
+                                    onClick={() => setIsCreateQuizModalOpen(true)}
+                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Create Quiz
+                                </button>
+                            )}
+                        </div>
+                        {quizzes.length === 0 ? (
+                            <div className="text-center py-12 text-text-secondary">
+                                <p>No quizzes available yet.</p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-4">
+                                {quizzes.map((quiz: any) => (
+                                    <div key={quiz.id} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-6 hover:border-primary/30 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex-1">
+                                                <h3 className="text-xl font-bold mb-2">{quiz.title}</h3>
+                                                {quiz.description && (
+                                                    <p className="text-text-secondary mb-3">{quiz.description}</p>
+                                                )}
+                                                <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
+                                                    {quiz.time_limit && (
+                                                        <span className="flex items-center gap-1">
+                                                            <Clock className="w-4 h-4" />
+                                                            {quiz.time_limit} minutes
+                                                        </span>
+                                                    )}
+                                                    {quiz.max_attempts && (
+                                                        <span className="flex items-center gap-1">
+                                                            <CheckCircle className="w-4 h-4" />
+                                                            Max Attempts: {quiz.max_attempts}
+                                                        </span>
+                                                    )}
+                                                    {quiz.passing_score && (
+                                                        <span className="flex items-center gap-1">
+                                                            <GraduationCap className="w-4 h-4" />
+                                                            Passing: {quiz.passing_score}%
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {isOwner ? (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => navigate(`/quiz/${quiz.id}/take`)}
+                                                        className="btn bg-white/5 hover:bg-white/10 text-white border border-white/10 flex items-center gap-2 text-sm"
+                                                    >
+                                                        <PlayCircle className="w-4 h-4" />
+                                                        Preview
+                                                    </button>
+                                                </div>
+                                            ) : course.is_enrolled && isStudent ? (
+                                                <button
+                                                    onClick={() => navigate(`/quiz/${quiz.id}/take`)}
+                                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                                >
+                                                    <PlayCircle className="w-4 h-4" />
+                                                    Take Quiz
+                                                </button>
+                                            ) : null}
                                         </div>
                                     </div>
                                 ))}
