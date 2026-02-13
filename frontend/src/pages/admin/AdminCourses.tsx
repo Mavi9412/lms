@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, CheckCircle, Eye, EyeOff, Search } from 'lucide-react';
 import api from '../../services/api';
+import CreateCourseModal from '../../components/modals/CreateCourseModal';
+import EditCourseModal from '../../components/modals/EditCourseModal';
 
 interface Course {
     id: number;
@@ -24,9 +26,8 @@ const AdminCourses = () => {
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
     useEffect(() => {
         fetchCourses();
@@ -115,7 +116,7 @@ const AdminCourses = () => {
                     <p className="text-text-secondary">Create, manage, and publish courses.</p>
                 </div>
                 <button
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={() => setShowCreateModal(true)}
                     className="btn btn-primary flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
@@ -190,18 +191,15 @@ const AdminCourses = () => {
                                             <button
                                                 onClick={() => handleTogglePublish(course.id, course.is_published)}
                                                 className={`p-2 rounded-lg transition-colors ${course.is_published
-                                                        ? 'hover:bg-orange-500/20 text-text-secondary hover:text-orange-400'
-                                                        : 'hover:bg-blue-500/20 text-text-secondary hover:text-blue-400'
+                                                    ? 'hover:bg-orange-500/20 text-text-secondary hover:text-orange-400'
+                                                    : 'hover:bg-blue-500/20 text-text-secondary hover:text-blue-400'
                                                     }`}
                                                 title={course.is_published ? 'Unpublish Course' : 'Publish Course'}
                                             >
                                                 {course.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    setSelectedCourse(course);
-                                                    setIsEditModalOpen(true);
-                                                }}
+                                                onClick={() => setEditingCourse(course)}
                                                 className="p-2 hover:bg-teal-500/20 text-text-secondary hover:text-teal-400 rounded-lg transition-colors"
                                                 title="Edit Course"
                                             >
@@ -227,6 +225,23 @@ const AdminCourses = () => {
                     </div>
                 )}
             </div>
+
+            {/* Create Course Modal */}
+            {showCreateModal && (
+                <CreateCourseModal
+                    onClose={() => setShowCreateModal(false)}
+                    onSuccess={fetchCourses}
+                />
+            )}
+
+            {/* Edit Course Modal */}
+            {editingCourse && (
+                <EditCourseModal
+                    course={editingCourse}
+                    onClose={() => setEditingCourse(null)}
+                    onSuccess={fetchCourses}
+                />
+            )}
         </div>
     );
 };

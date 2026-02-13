@@ -5,6 +5,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminCourses from './pages/admin/AdminCourses';
+import AdminBatches from './pages/admin/AdminBatches';
 import AdminPolicies from './pages/admin/AdminPolicies';
 import AcademicStructure from './pages/admin/AcademicStructure';
 import AdminAllocations from './pages/admin/AdminAllocations';
@@ -41,6 +42,7 @@ function App() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="courses" element={<AdminCourses />} />
+                <Route path="batches" element={<AdminBatches />} />
                 <Route path="policies" element={<AdminPolicies />} />
                 <Route path="academic" element={<AcademicStructure />} />
                 <Route path="allocations" element={<AdminAllocations />} />
