@@ -162,6 +162,36 @@ def delete_user(
             )
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
+@router.patch("/users/{user_id}/toggle-active")
+def toggle_user_active(
+    user_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Toggle user active/inactive status"""
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Toggle the active status
+    user.is_active = not user.is_active
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    # Audit Log
+    action_status = "ACTIVATE_USER" if user.is_active else "DEACTIVATE_USER"
+    log = AuditLog(
+        action=action_status,
+        performed_by=admin.id,
+        target_id=user_id,
+        details=f"{'Activated' if user.is_active else 'Deactivated'} user {user.email}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": f"User {'activated' if user.is_active else 'deactivated'}", "is_active": user.is_active}
+
 # --- Academic Structure ---
 
 # Departments

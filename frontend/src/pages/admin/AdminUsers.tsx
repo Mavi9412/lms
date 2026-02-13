@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Trash2, User, Shield, GraduationCap, Search, Plus, Edit } from 'lucide-react';
+import { Trash2, User, Shield, GraduationCap, Search, Plus, Edit, Power } from 'lucide-react';
 import api from '../../services/api';
 import AddUserModal from '../../components/AddUserModal';
 import EditUserModal from '../../components/EditUserModal';
@@ -43,8 +43,23 @@ const AdminUsers = () => {
         try {
             await api.delete(`/admin/users/${userId}`);
             setUsers(users.filter(u => u.id !== userId));
-        } catch (error) {
-            alert('Failed to delete user');
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to delete user');
+        }
+    };
+
+    const handleToggleActive = async (userId: number, currentStatus: boolean) => {
+        const action = currentStatus ? 'deactivate' : 'activate';
+        if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+
+        try {
+            const response = await api.patch(`/admin/users/${userId}/toggle-active`);
+            // Update user in the list
+            setUsers(users.map(u =>
+                u.id === userId ? { ...u, is_active: response.data.is_active } : u
+            ));
+        } catch (error: any) {
+            alert(error.response?.data?.detail || `Failed to ${action} user`);
         }
     };
 
@@ -154,6 +169,16 @@ const AdminUsers = () => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleToggleActive(user.id, user.is_active)}
+                                                className={`p-2 rounded-lg transition-colors ${user.is_active
+                                                        ? 'hover:bg-orange-500/20 text-text-secondary hover:text-orange-400'
+                                                        : 'hover:bg-green-500/20 text-text-secondary hover:text-green-400'
+                                                    }`}
+                                                title={user.is_active ? 'Deactivate User' : 'Activate User'}
+                                            >
+                                                <Power className="w-4 h-4" />
+                                            </button>
                                             <button
                                                 onClick={() => {
                                                     setSelectedUser(user);
