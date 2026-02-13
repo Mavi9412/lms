@@ -25,7 +25,30 @@ class Program(SQLModel, table=True):
     department_id: int = Field(foreign_key="department.id")
     
     department: Department = Relationship(back_populates="programs")
+    batches: List["Batch"] = Relationship(back_populates="program")
     students: List["User"] = Relationship(back_populates="program")
+
+class Batch(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str  # e.g. "Fall 2022", "Batch 2020-2024"
+    program_id: int = Field(foreign_key="program.id")
+    start_date: datetime
+    end_date: Optional[datetime] = None
+    is_active: bool = Field(default=True)
+    
+    program: Program = Relationship(back_populates="batches")
+    students: List["User"] = Relationship(back_populates="batch")
+
+class BatchCreate(SQLModel):
+    name: str
+    program_id: int
+    start_date: datetime
+    end_date: Optional[datetime] = None
+
+class BatchUpdate(SQLModel):
+    name: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 class Semester(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -41,6 +64,8 @@ class Course(SQLModel, table=True):
     code: str = Field(unique=True) # e.g. "CS-101"
     credit_hours: int = Field(default=3)
     department_id: int = Field(foreign_key="department.id")
+    is_approved: bool = Field(default=False)  # Admin approval
+    is_published: bool = Field(default=False)  # Visibility to students
     
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
@@ -81,6 +106,13 @@ class CourseCreate(SQLModel):
     credit_hours: int = 3
     department_id: int
 
+class CourseUpdate(SQLModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    code: Optional[str] = None
+    credit_hours: Optional[int] = None
+    department_id: Optional[int] = None
+
 class Section(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str # e.g. "Section A"
@@ -104,12 +136,14 @@ class UserBase(SQLModel):
     
     # New Fields
     program_id: Optional[int] = Field(default=None, foreign_key="program.id") # For Students
+    batch_id: Optional[int] = Field(default=None, foreign_key="batch.id") # For Students - Cohort tracking
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
     
     program: Optional[Program] = Relationship(back_populates="students")
+    batch: Optional[Batch] = Relationship(back_populates="students")
     
     # Relationships with cascade delete
     teaching_sections: List[Section] = Relationship(back_populates="teacher", cascade_delete=True)
@@ -119,10 +153,12 @@ class User(UserBase, table=True):
 class UserCreate(UserBase):
     password: str
     program_id: Optional[int] = None
+    batch_id: Optional[int] = None
 
 class UserUpdate(UserBase):
     password: Optional[str] = None
     program_id: Optional[int] = None
+    batch_id: Optional[int] = None
 
 class Enrollment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

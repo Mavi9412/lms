@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from database import get_session
-from models import User, Role, Department, Program, Course, Section, Semester, AuditLog, UserCreate, UserUpdate
+from models import User, Role, Department, Program, Batch, Course, Section, Semester, AuditLog, UserCreate, UserUpdate, CourseUpdate, BatchCreate, BatchUpdate
 from auth import get_current_user, get_password_hash
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 router = APIRouter(
     prefix="/admin",
@@ -228,21 +228,332 @@ def delete_program(prog_id: int, session: Session = Depends(get_session), admin:
     session.commit()
     return {"message": "Deleted"}
 
-# Courses
-@router.post("/courses", response_model=Course)
-def create_course(course: Course, session: Session = Depends(get_session), admin: User = Depends(get_current_admin)):
-    session.add(course)
-    session.commit()
-    session.refresh(course)
-    return course
+# Batches
+@router.get("/batches", response_model=List[Batch])
+def get_all_batches(
+    program_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get all batches, optionally filtered by program"""
+    query = select(Batch)
+    if program_id:
+        query = query.where(Batch.program_id == program_id)
+    batches = session.exec(query).all()
+    return batches
 
-@router.delete("/courses/{course_id}")
-def delete_course(course_id: int, session: Session = Depends(get_session), admin: User = Depends(get_current_admin)):
+@router.get("/batches/{batch_id}", response_model=Batch)
+def get_batch(
+    batch_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get single batch details"""
+    batch = session.get(Batch, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    return batch
+
+@router.post("/batches", response_model=Batch)
+def create_batch(
+    batch_data: BatchCreate,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Create a new batch"""
+    batch = Batch(**batch_data.model_dump())
+    session.add(batch)
+    session.commit()
+    session.refresh(batch)
+    
+    # Audit Log
+    log = AuditLog(
+        action="CREATE_BATCH",
+        performed_by=admin.id,
+        target_id=batch.id,
+        details=f"Created batch {batch.name}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return batch
+
+@router.patch("/batches/{batch_id}", response_model=Batch)
+def update_batch(
+    batch_id: int,
+    batch_data: BatchUpdate,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Update batch details"""
+    batch = session.get(Batch, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Update fields
+    update_data = batch_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(batch, key, value)
+    
+    session.add(batch)
+    session.commit()
+    session.refresh(batch)
+    
+    # Audit Log
+    log = AuditLog(
+        action="UPDATE_BATCH",
+        performed_by=admin.id,
+        target_id=batch_id,
+        details=f"Updated batch {batch.name}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return batch
+
+@router.patch("/batches/{batch_id}/toggle-active")
+def toggle_batch_active(
+    batch_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Toggle batch active/inactive status"""
+    batch = session.get(Batch, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    batch.is_active = not batch.is_active
+    session.add(batch)
+    session.commit()
+    
+    # Audit Log
+    action = "ACTIVATE_BATCH" if batch.is_active else "DEACTIVATE_BATCH"
+    log = AuditLog(
+        action=action,
+        performed_by=admin.id,
+        target_id=batch_id,
+        details=f"{'Activated' if batch.is_active else 'Deactivated'} batch {batch.name}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": f"Batch {'activated' if batch.is_active else 'deactivated'}", "is_active": batch.is_active}
+
+@router.delete("/batches/{batch_id}")
+def delete_batch(
+    batch_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Delete a batch"""
+    batch = session.get(Batch, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    # Check if batch has students
+    if batch.students:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete batch: {len(batch.students)} students are assigned to this batch"
+        )
+    
+    name = batch.name
+    session.delete(batch)
+    session.commit()
+    
+    # Audit Log
+    log = AuditLog(
+        action="DELETE_BATCH",
+        performed_by=admin.id,
+        target_id=batch_id,
+        details=f"Deleted batch {name}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": "Deleted"}
+
+@router.get("/batches/{batch_id}/students", response_model=List[User])
+def get_batch_students(
+    batch_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get all students in a batch"""
+    batch = session.get(Batch, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    return batch.students
+
+# Courses
+@router.get("/courses", response_model=List[Course])
+def get_all_courses(
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get all courses for admin management"""
+    courses = session.exec(select(Course)).all()
+    return courses
+
+@router.get("/courses/{course_id}", response_model=Course)
+def get_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get single course details"""
     course = session.get(Course, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+@router.post("/courses", response_model=Course)
+def create_course(
+    course_data: Course,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Create a new course"""
+    # Check if code already exists
+    existing = session.exec(select(Course).where(Course.code == course_data.code)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Course code already exists")
+    
+    session.add(course_data)
+    session.commit()
+    session.refresh(course_data)
+    
+    # Audit Log
+    log = AuditLog(
+        action="CREATE_COURSE",
+        performed_by=admin.id,
+        target_id=course_data.id,
+        details=f"Created course {course_data.code} - {course_data.title}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return course_data
+
+@router.patch("/courses/{course_id}", response_model=Course)
+def update_course(
+    course_id: int,
+    course_data: CourseUpdate,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Update course details"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Check if code is being changed and if it's already taken
+    if course_data.code and course_data.code != course.code:
+        existing = session.exec(select(Course).where(Course.code == course_data.code)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Course code already exists")
+    
+    # Update fields
+    update_data = course_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(course, key, value)
+    
+    session.add(course)
+    session.commit()
+    session.refresh(course)
+    
+    # Audit Log
+    log = AuditLog(
+        action="UPDATE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Updated course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return course
+
+@router.patch("/courses/{course_id}/approve")
+def approve_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Approve a course"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    course.is_approved = True
+    session.add(course)
+    session.commit()
+    
+    # Audit Log
+    log = AuditLog(
+        action="APPROVE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Approved course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": "Course approved", "is_approved": True}
+
+@router.patch("/courses/{course_id}/toggle-publish")
+def toggle_course_publish(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Toggle course publish status"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    course.is_published = not course.is_published
+    session.add(course)
+    session.commit()
+    
+    # Audit Log
+    action = "PUBLISH_COURSE" if course.is_published else "UNPUBLISH_COURSE"
+    log = AuditLog(
+        action=action,
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"{'Published' if course.is_published else 'Unpublished'} course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": f"Course {'published' if course.is_published else 'unpublished'}", "is_published": course.is_published}
+
+@router.delete("/courses/{course_id}")
+def delete_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Delete a course"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    code = course.code
     session.delete(course)
     session.commit()
+    
+    # Audit Log
+    log = AuditLog(
+        action="DELETE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Deleted course {code}"
+    )
+    session.add(log)
+    session.commit()
+    
     return {"message": "Deleted"}
 
 # Semesters
