@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from database import get_session
-from models import User, Role, Department, Program, Course, Section, Semester, AuditLog, UserCreate, UserUpdate
+from models import User, Role, Department, Program, Course, Section, Semester, AuditLog, UserCreate, UserUpdate, CourseUpdate
 from auth import get_current_user, get_password_hash
 from typing import List, Dict, Any
 
@@ -229,20 +229,174 @@ def delete_program(prog_id: int, session: Session = Depends(get_session), admin:
     return {"message": "Deleted"}
 
 # Courses
-@router.post("/courses", response_model=Course)
-def create_course(course: Course, session: Session = Depends(get_session), admin: User = Depends(get_current_admin)):
-    session.add(course)
-    session.commit()
-    session.refresh(course)
-    return course
+@router.get("/courses", response_model=List[Course])
+def get_all_courses(
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get all courses for admin management"""
+    courses = session.exec(select(Course)).all()
+    return courses
 
-@router.delete("/courses/{course_id}")
-def delete_course(course_id: int, session: Session = Depends(get_session), admin: User = Depends(get_current_admin)):
+@router.get("/courses/{course_id}", response_model=Course)
+def get_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Get single course details"""
     course = session.get(Course, course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
+    return course
+
+@router.post("/courses", response_model=Course)
+def create_course(
+    course_data: Course,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Create a new course"""
+    # Check if code already exists
+    existing = session.exec(select(Course).where(Course.code == course_data.code)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Course code already exists")
+    
+    session.add(course_data)
+    session.commit()
+    session.refresh(course_data)
+    
+    # Audit Log
+    log = AuditLog(
+        action="CREATE_COURSE",
+        performed_by=admin.id,
+        target_id=course_data.id,
+        details=f"Created course {course_data.code} - {course_data.title}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return course_data
+
+@router.patch("/courses/{course_id}", response_model=Course)
+def update_course(
+    course_id: int,
+    course_data: CourseUpdate,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Update course details"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Check if code is being changed and if it's already taken
+    if course_data.code and course_data.code != course.code:
+        existing = session.exec(select(Course).where(Course.code == course_data.code)).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Course code already exists")
+    
+    # Update fields
+    update_data = course_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(course, key, value)
+    
+    session.add(course)
+    session.commit()
+    session.refresh(course)
+    
+    # Audit Log
+    log = AuditLog(
+        action="UPDATE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Updated course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return course
+
+@router.patch("/courses/{course_id}/approve")
+def approve_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Approve a course"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    course.is_approved = True
+    session.add(course)
+    session.commit()
+    
+    # Audit Log
+    log = AuditLog(
+        action="APPROVE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Approved course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": "Course approved", "is_approved": True}
+
+@router.patch("/courses/{course_id}/toggle-publish")
+def toggle_course_publish(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Toggle course publish status"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    course.is_published = not course.is_published
+    session.add(course)
+    session.commit()
+    
+    # Audit Log
+    action = "PUBLISH_COURSE" if course.is_published else "UNPUBLISH_COURSE"
+    log = AuditLog(
+        action=action,
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"{'Published' if course.is_published else 'Unpublished'} course {course.code}"
+    )
+    session.add(log)
+    session.commit()
+    
+    return {"message": f"Course {'published' if course.is_published else 'unpublished'}", "is_published": course.is_published}
+
+@router.delete("/courses/{course_id}")
+def delete_course(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin)
+):
+    """Delete a course"""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    code = course.code
     session.delete(course)
     session.commit()
+    
+    # Audit Log
+    log = AuditLog(
+        action="DELETE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"Deleted course {code}"
+    )
+    session.add(log)
+    session.commit()
+    
     return {"message": "Deleted"}
 
 # Semesters

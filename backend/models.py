@@ -41,6 +41,8 @@ class Course(SQLModel, table=True):
     code: str = Field(unique=True) # e.g. "CS-101"
     credit_hours: int = Field(default=3)
     department_id: int = Field(foreign_key="department.id")
+    is_approved: bool = Field(default=False)  # Admin approval
+    is_published: bool = Field(default=False)  # Visibility to students
     
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
@@ -80,6 +82,13 @@ class CourseCreate(SQLModel):
     code: str
     credit_hours: int = 3
     department_id: int
+
+class CourseUpdate(SQLModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    code: Optional[str] = None
+    credit_hours: Optional[int] = None
+    department_id: Optional[int] = None
 
 class Section(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

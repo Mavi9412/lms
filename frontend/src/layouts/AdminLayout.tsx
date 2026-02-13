@@ -23,6 +23,7 @@ const AdminLayout = () => {
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
         { icon: Users, label: 'User Management', path: '/admin/users' },
+        { icon: BookOpen, label: 'Course Management', path: '/admin/courses' },
         { icon: Building2, label: 'Academic Structure', path: '/admin/academic' },
         { icon: BookOpen, label: 'Course Allocations', path: '/admin/allocations' },
         { icon: Settings, label: 'Policies', path: '/admin/policies' },
@@ -48,8 +49,8 @@ const AdminLayout = () => {
                                 key={item.path}
                                 onClick={() => navigate(item.path)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                                        ? 'bg-primary/20 text-primary'
-                                        : 'text-text-secondary hover:text-white hover:bg-white/5'
+                                    ? 'bg-primary/20 text-primary'
+                                    : 'text-text-secondary hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 <Icon className="w-5 h-5" />
