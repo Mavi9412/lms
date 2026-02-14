@@ -229,8 +229,8 @@ const TeacherAttendance = () => {
                 <button
                     onClick={() => setActiveTab('mark')}
                     className={`px-6 py-3 rounded-lg transition-all flex items-center gap-2 font-medium ${activeTab === 'mark'
-                            ? 'bg-primary text-white'
-                            : 'text-text-secondary hover:text-white'
+                        ? 'bg-primary text-white'
+                        : 'text-text-secondary hover:text-white'
                         }`}
                 >
                     <FileText className="w-4 h-4" />
@@ -239,8 +239,8 @@ const TeacherAttendance = () => {
                 <button
                     onClick={() => setActiveTab('edit')}
                     className={`px-6 py-3 rounded-lg transition-all flex items-center gap-2 font-medium ${activeTab === 'edit'
-                            ? 'bg-primary text-white'
-                            : 'text-text-secondary hover:text-white'
+                        ? 'bg-primary text-white'
+                        : 'text-text-secondary hover:text-white'
                         }`}
                 >
                     <Edit className="w-4 h-4" />
@@ -249,8 +249,8 @@ const TeacherAttendance = () => {
                 <button
                     onClick={() => setActiveTab('report')}
                     className={`px-6 py-3 rounded-lg transition-all flex items-center gap-2 font-medium ${activeTab === 'report'
-                            ? 'bg-primary text-white'
-                            : 'text-text-secondary hover:text-white'
+                        ? 'bg-primary text-white'
+                        : 'text-text-secondary hover:text-white'
                         }`}
                 >
                     <BarChart3 className="w-4 h-4" />
@@ -271,7 +271,7 @@ const TeacherAttendance = () => {
                                 const section = sections.find(s => s.id === parseInt(e.target.value));
                                 setSelectedSection(section || null);
                             }}
-                            className="w-full px-4 py-3 bg-bg-primary border border-white/10 rounded-lg focus:outline-none focus:border-primary transition-colors text-white"
+                            className="select-field"
                         >
                             {sections.map(section => (
                                 <option key={section.id} value={section.id}>
@@ -389,8 +389,8 @@ const TeacherAttendance = () => {
                                                     key={status}
                                                     onClick={() => handleStatusChange(student.id, status)}
                                                     className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 transition-all ${attendance[student.id] === status
-                                                            ? getStatusColor(status)
-                                                            : 'border-white/10 text-text-secondary hover:border-white/20'
+                                                        ? getStatusColor(status)
+                                                        : 'border-white/10 text-text-secondary hover:border-white/20'
                                                         }`}
                                                 >
                                                     {getStatusIcon(status)}
@@ -433,8 +433,8 @@ const TeacherAttendance = () => {
                                                 key={status}
                                                 onClick={() => handleUpdateRecord(record.id, status)}
                                                 className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 transition-all ${record.status === status
-                                                        ? getStatusColor(status)
-                                                        : 'border-white/10 text-text-secondary hover:border-white/20'
+                                                    ? getStatusColor(status)
+                                                    : 'border-white/10 text-text-secondary hover:border-white/20'
                                                     }`}
                                             >
                                                 {getStatusIcon(status)}
@@ -514,8 +514,8 @@ const TeacherAttendance = () => {
                                                     <td className="p-4 text-center text-yellow-400 font-medium">{student.late}</td>
                                                     <td className="p-4 text-center">
                                                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${student.attendance_percentage >= 75 ? 'bg-green-500/20 text-green-400' :
-                                                                student.attendance_percentage >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                    'bg-red-500/20 text-red-400'
+                                                            student.attendance_percentage >= 50 ? 'bg-yellow-500/20 text-yellow-400' :
+                                                                'bg-red-500/20 text-red-400'
                                                             }`}>
                                                             {student.attendance_percentage}%
                                                         </span>

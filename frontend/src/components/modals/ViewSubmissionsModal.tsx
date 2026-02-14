@@ -88,8 +88,8 @@ const ViewSubmissionsModal = ({ assignment, onClose }: Props) => {
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-bg-secondary rounded-xl border border-white/10 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-[#0f172a] rounded-xl border border-white/10 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-white/10 sticky top-0 bg-bg-secondary z-10">
                         <div>

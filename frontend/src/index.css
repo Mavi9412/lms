@@ -246,6 +246,36 @@
         box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
 
+    /* Dropdown option styling */
+    .select-field option {
+        background-color: var(--bg-secondary);
+        color: white;
+        padding: 0.75rem 1rem;
+    }
+
+    .select-field option:hover,
+    .select-field option:focus {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    .select-field option:checked {
+        background-color: var(--primary);
+        color: white;
+        font-weight: 600;
+    }
+
+    /* Global select styling for all dropdowns */
+    select {
+        color-scheme: dark;
+    }
+
+    select option {
+        background-color: #0f172a;
+        color: white;
+        padding: 0.5rem;
+    }
+
     /* Badges */
     .badge {
         display: inline-flex;
