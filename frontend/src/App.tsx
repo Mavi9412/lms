@@ -17,6 +17,8 @@ import CourseDetails from './pages/CourseDetails';
 import MyCourses from './pages/MyCourses';
 import StudentAssignments from './pages/StudentAssignments';
 import StudentQuizzes from './pages/StudentQuizzes';
+import StudentGrades from './pages/StudentGrades';
+import StudentCommunication from './pages/StudentCommunication';
 import Profile from './pages/Profile';
 import StudentDashboard from './pages/StudentDashboard';
 import Attendance from './pages/Attendance';
@@ -69,6 +71,8 @@ function App() {
               <Route path="/my-courses" element={<MyCourses />} />
               <Route path="/my-assignments" element={<StudentAssignments />} />
               <Route path="/my-quizzes" element={<StudentQuizzes />} />
+              <Route path="/my-grades" element={<StudentGrades />} />
+              <Route path="/communication" element={<StudentCommunication />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<StudentDashboard />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
