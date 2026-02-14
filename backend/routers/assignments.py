@@ -170,6 +170,7 @@ def grade_submission(
     session.refresh(submission)
     return submission
 
+
 @router.get("/my-submissions", response_model=List[Submission])
 def get_my_submissions(
     current_user: User = Depends(get_current_user),
@@ -177,3 +178,21 @@ def get_my_submissions(
 ):
     submissions = session.exec(select(Submission).where(Submission.student_id == current_user.id)).all()
     return submissions
+
+@router.get("/{assignment_id}/my-submission")
+def get_my_submission_for_assignment(
+    assignment_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Get current user's submission for a specific assignment"""
+    submission = session.exec(
+        select(Submission)
+        .where(Submission.assignment_id == assignment_id)
+        .where(Submission.student_id == current_user.id)
+    ).first()
+    
+    if not submission:
+        raise HTTPException(status_code=404, detail="No submission found")
+    
+    return submission

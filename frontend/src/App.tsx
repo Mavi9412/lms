@@ -14,6 +14,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Courses from './pages/Courses';
 import CourseDetails from './pages/CourseDetails';
+import MyCourses from './pages/MyCourses';
+import StudentAssignments from './pages/StudentAssignments';
+import StudentQuizzes from './pages/StudentQuizzes';
 import Profile from './pages/Profile';
 import StudentDashboard from './pages/StudentDashboard';
 import Attendance from './pages/Attendance';
@@ -63,6 +66,9 @@ function App() {
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetails />} />
+              <Route path="/my-courses" element={<MyCourses />} />
+              <Route path="/my-assignments" element={<StudentAssignments />} />
+              <Route path="/my-quizzes" element={<StudentQuizzes />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<StudentDashboard />} />
               <Route path="/student/dashboard" element={<StudentDashboard />} />
