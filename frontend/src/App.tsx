@@ -23,6 +23,7 @@ import ResetPassword from './pages/ResetPassword';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizResults from './pages/QuizResults';
 import Gradebook from './pages/Gradebook';
+import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import { AuthProvider } from './context/AuthContext';
 
 // const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -58,7 +59,9 @@ function App() {
               <Route path="/courses/:id" element={<CourseDetails />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/attendance" element={<Attendance />} />
+              <Route path="/teacher" element={<TeacherDashboard />} />
+              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+              <Route path="/take-attendance" element={<Attendance />} />
               <Route path="/my-attendance" element={<MyAttendance />} />
               <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
               <Route path="/quiz-results/:attemptId" element={<QuizResults />} />
