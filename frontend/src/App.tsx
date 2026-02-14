@@ -15,7 +15,7 @@ import Register from './pages/Register';
 import Courses from './pages/Courses';
 import CourseDetails from './pages/CourseDetails';
 import Profile from './pages/Profile';
-import Dashboard from './pages/Dashboard';
+import StudentDashboard from './pages/StudentDashboard';
 import Attendance from './pages/Attendance';
 import MyAttendance from './pages/MyAttendance';
 import ForgotPassword from './pages/ForgotPassword';
@@ -27,6 +27,9 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TeacherSections from './pages/teacher/TeacherSections';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherAssignments from './pages/teacher/TeacherAssignments';
+import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
+import TeacherMaterials from './pages/teacher/TeacherMaterials';
+import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
 import { AuthProvider } from './context/AuthContext';
 
 // const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -61,12 +64,16 @@ function App() {
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetails />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/student/dashboard" element={<StudentDashboard />} />
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
               <Route path="/teacher/sections" element={<TeacherSections />} />
               <Route path="/teacher/attendance" element={<TeacherAttendance />} />
               <Route path="/teacher/assignments" element={<TeacherAssignments />} />
+              <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
+              <Route path="/teacher/materials" element={<TeacherMaterials />} />
+              <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
               <Route path="/take-attendance" element={<Attendance />} />
               <Route path="/my-attendance" element={<MyAttendance />} />
               <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
