@@ -25,6 +25,8 @@ import QuizResults from './pages/QuizResults';
 import Gradebook from './pages/Gradebook';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TeacherSections from './pages/teacher/TeacherSections';
+import TeacherAttendance from './pages/teacher/TeacherAttendance';
+import TeacherAssignments from './pages/teacher/TeacherAssignments';
 import { AuthProvider } from './context/AuthContext';
 
 // const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
@@ -63,6 +65,8 @@ function App() {
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
               <Route path="/teacher/sections" element={<TeacherSections />} />
+              <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+              <Route path="/teacher/assignments" element={<TeacherAssignments />} />
               <Route path="/take-attendance" element={<Attendance />} />
               <Route path="/my-attendance" element={<MyAttendance />} />
               <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
