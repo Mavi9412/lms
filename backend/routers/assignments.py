@@ -114,7 +114,7 @@ async def submit_assignment(
     session.refresh(db_submission)
     return db_submission
 
-@router.get("/{assignment_id}/submissions", response_model=List[Submission])
+@router.get("/{assignment_id}/submissions")
 def get_submissions(
     assignment_id: int,
     current_user: User = Depends(get_current_user),
@@ -126,7 +126,28 @@ def get_submissions(
     submissions = session.exec(
         select(Submission).where(Submission.assignment_id == assignment_id)
     ).all()
-    return submissions
+    
+    # Include student details in response
+    result = []
+    for submission in submissions:
+        student = session.get(User, submission.student_id)
+        result.append({
+            "id": submission.id,
+            "assignment_id": submission.assignment_id,
+            "student_id": submission.student_id,
+            "content": submission.content,
+            "file_path": submission.file_path,
+            "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else None,
+            "grade": submission.grade,
+            "feedback": submission.feedback,
+            "student": {
+                "id": student.id if student else None,
+                "full_name": student.full_name if student else "Unknown",
+                "email": student.email if student else ""
+            } if student else None
+        })
+    
+    return result
 
 @router.post("/submissions/{submission_id}/grade", response_model=Submission)
 def grade_submission(
