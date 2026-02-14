@@ -142,9 +142,83 @@ def get_teacher_sections(
             "course_id": section.course_id,
             "course_title": course.title if course else "Unknown",
             "course_code": course.code if course else "N/A",
+            "course_description": course.description if course else None,
+            "credit_hours": course.credit_hours if course else 0,
             "semester": section.semester,
             "enrolled_count": enrollment_count,
             "capacity": section.capacity
         })
     
     return result
+
+
+@router.get("/sections/{section_id}")
+def get_section_details(
+    section_id: int,
+    session: Session = Depends(get_session),
+    teacher: User = Depends(get_current_teacher)
+) -> Dict[str, Any]:
+    """Get detailed information about a specific section (teacher must own it)"""
+    # Get section and verify it belongs to this teacher
+    section = session.get(Section, section_id)
+    if not section:
+        raise HTTPException(status_code=404, detail="Section not found")
+    
+    if section.teacher_id != teacher.id:
+        raise HTTPException(status_code=403, detail="You can only view your own sections")
+    
+    # Get course details
+    course = session.get(Course, section.course_id)
+    
+    # Count enrollments
+    enrollment_count = session.exec(
+        select(func.count(Enrollment.id)).where(Enrollment.section_id == section.id)
+    ).one()
+    
+    return {
+        "id": section.id,
+        "name": section.name,
+        "semester": section.semester,
+        "capacity": section.capacity,
+        "enrolled_count": enrollment_count,
+        "course": {
+            "id": course.id if course else None,
+            "title": course.title if course else "Unknown",
+            "code": course.code if course else "N/A",
+            "description": course.description if course else None,
+            "credit_hours": course.credit_hours if course else 0
+        }
+    }
+
+
+@router.get("/sections/{section_id}/students")
+def get_section_students(
+    section_id: int,
+    session: Session = Depends(get_session),
+    teacher: User = Depends(get_current_teacher)
+) -> List[Dict[str, Any]]:
+    """Get list of enrolled students in a section (teacher must own it)"""
+    # Get section and verify it belongs to this teacher
+    section = session.get(Section, section_id)
+    if not section:
+        raise HTTPException(status_code=404, detail="Section not found")
+    
+    if section.teacher_id != teacher.id:
+        raise HTTPException(status_code=403, detail="You can only view students in your own sections")
+    
+    # Get all enrollments for this section
+    enrollments_query = select(Enrollment).where(Enrollment.section_id == section_id)
+    enrollments = session.exec(enrollments_query).all()
+    
+    students = []
+    for enrollment in enrollments:
+        student = session.get(User, enrollment.student_id)
+        if student:
+            students.append({
+                "id": student.id,
+                "full_name": student.full_name,
+                "email": student.email,
+                "enrollment_date": enrollment.created_at.isoformat() if enrollment.created_at else None
+            })
+    
+    return students
