@@ -11,8 +11,8 @@ const AdminAllocations = () => {
         fetchData();
     }, []);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const [teachersRes, sectionsRes] = await Promise.all([
                 api.get('/admin/users?role=teacher'),
@@ -23,15 +23,16 @@ const AdminAllocations = () => {
         } catch (error) {
             console.error('Failed to fetch allocations data');
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
     const handleAssign = async (sectionId: number, teacherId: string) => {
         if (!teacherId) return;
 
-        // Optimistic Update: Immediately update UI
         const selectedTeacher = teachers.find(t => t.id === parseInt(teacherId));
+
+        // Optimistic Update
         setSections(prev => prev.map(sec =>
             sec.id === sectionId
                 ? { ...sec, teacher: selectedTeacher }
@@ -40,12 +41,12 @@ const AdminAllocations = () => {
 
         try {
             await api.post(`/admin/sections/${sectionId}/assign-teacher/${teacherId}`);
-            // Silently refresh data to ensure consistency
-            fetchData();
+            // Silently refresh to confirm data without showing spinner
+            fetchData(true);
         } catch (error) {
             console.error('Assignment failed:', error);
             alert('Failed to assign teacher');
-            fetchData(); // Revert on error
+            fetchData(true); // Revert
         }
     };
 
@@ -85,17 +86,11 @@ const AdminAllocations = () => {
                                         )}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <select
-                                            key={`teacher-${section.id}-${section.teacher?.id || 'none'}`}
-                                            className="select-field"
-                                            onChange={(e) => handleAssign(section.id, e.target.value)}
-                                            defaultValue=""
-                                        >
-                                            <option value="" disabled>Select Teacher</option>
-                                            {teachers.map(t => (
-                                                <option key={t.id} value={t.id}>{t.full_name}</option>
-                                            ))}
-                                        </select>
+                                        <SearchableSelect
+                                            options={teachers.map(t => ({ value: t.id, label: t.full_name }))}
+                                            onSelect={(val) => handleAssign(section.id, val)}
+                                            placeholder="Select Teacher"
+                                        />
                                     </td>
                                 </tr>
                             ))}
@@ -106,6 +101,80 @@ const AdminAllocations = () => {
                             No sections found. Create sections in Academic Structure first.
                         </div>
                     )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Searchable Select Component
+const SearchableSelect = ({ options, onSelect, placeholder = "Select..." }: { options: any[], onSelect: (val: string) => void, placeholder?: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const [dropdownRef, setDropdownRef] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef && !dropdownRef.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen, dropdownRef]);
+
+    const filteredOptions = options.filter(opt =>
+        opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="relative" ref={setDropdownRef}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                className="select-field cursor-pointer flex items-center justify-between"
+            >
+                <span className="text-text-secondary">{placeholder}</span>
+                <div className="border-[4px] border-transparent border-t-text-secondary translate-y-1 ml-2"></div>
+            </div>
+
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-[#0f172a] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100">
+                    <div className="p-2 border-b border-white/10 sticky top-0 bg-[#0f172a]">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search teacher..."
+                            className="w-full bg-white/5 border border-white/10 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-primary placeholder:text-text-secondary/50"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="overflow-y-auto flex-1">
+                        {filteredOptions.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-text-secondary text-center">
+                                No teachers found
+                            </div>
+                        ) : (
+                            filteredOptions.map((opt) => (
+                                <div
+                                    key={opt.value}
+                                    onClick={() => {
+                                        onSelect(opt.value);
+                                        setIsOpen(false);
+                                        setSearch("");
+                                    }}
+                                    className="px-4 py-2 text-sm text-text-primary hover:bg-white/5 cursor-pointer transition-colors"
+                                >
+                                    {opt.label}
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
         </div>

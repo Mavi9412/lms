@@ -32,8 +32,10 @@ def get_teacher_dashboard(
     """
     
     # Get all sections assigned to this teacher
+    print(f"DEBUG: Fetching dashboard for teacher ID: {teacher.id}, Name: {teacher.full_name}")
     sections_query = select(Section).where(Section.teacher_id == teacher.id)
     sections = session.exec(sections_query).all()
+    print(f"DEBUG: Found {len(sections)} sections for teacher {teacher.id}")
     
     # Build assigned sections data with course info and enrollment counts
     assigned_sections = []
@@ -46,7 +48,14 @@ def get_teacher_dashboard(
         # Count enrollments in this section
         enrollment_count = session.exec(
             select(func.count(Enrollment.id)).where(Enrollment.section_id == section.id)
-        ).one()
+        ).first()
+        
+        # Determine actual count value (handle tuple or scalar)
+        if isinstance(enrollment_count, (tuple, list)):
+             enrollment_count = enrollment_count[0]
+        
+        # Default to 0 if None (though count shouldn't return None)
+        enrollment_count = enrollment_count or 0
         
         total_students += enrollment_count
         
