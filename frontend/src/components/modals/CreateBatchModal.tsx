@@ -45,8 +45,8 @@ const CreateBatchModal = ({ programs, onClose, onSuccess }: CreateBatchModalProp
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-bg-secondary rounded-xl border border-white/10 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[#0f172a] rounded-xl border border-white/10 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-6 border-b border-white/10">
                     <h2 className="text-xl font-bold text-white">Create New Batch</h2>
                     <button
@@ -80,7 +80,7 @@ const CreateBatchModal = ({ programs, onClose, onSuccess }: CreateBatchModalProp
                             required
                             value={formData.program_id}
                             onChange={(e) => setFormData({ ...formData, program_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-bg-primary border border-white/10 rounded-lg focus:outline-none focus:border-primary transition-colors text-white"
+                            className="select-field"
                         >
                             <option value="">Select Program</option>
                             {programs.map(program => (

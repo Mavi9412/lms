@@ -1,20 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Award, BookOpen, FileText, TrendingUp, ChevronDown } from 'lucide-react';
+import { Award, BookOpen, FileText, TrendingUp } from 'lucide-react';
 import api from '../services/api';
-
-interface Assignment {
-    id: number;
-    title: string;
-    max_points: number;
-    course_id: number;
-}
-
-interface Submission {
-    id: number;
-    assignment_id: number;
-    grade: number | null;
-    feedback: string | null;
-}
 
 interface AssignmentGrade {
     assignment_title: string;
@@ -187,24 +173,28 @@ const StudentGrades = () => {
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="container-custom max-w-7xl mx-auto py-6 animate-fade-in">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
                     My Grades
                 </h1>
-                <p className="text-text-secondary mt-1">View your grades and academic performance</p>
+                <p className="text-text-secondary mt-2 text-sm sm:text-base">View your grades and academic performance</p>
             </div>
 
             {/* Course Filter */}
-            <div className="bg-bg-secondary rounded-xl p-4 mb-6 flex items-center gap-4">
-                <BookOpen className="w-5 h-5 text-primary" />
-                <label className="text-sm font-medium text-text-secondary">Filter by Course:</label>
-                <div className="relative flex-1 max-w-md">
+            <div className="bg-bg-secondary rounded-xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-2">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <label className="text-sm font-semibold text-white">Filter by Course:</label>
+                </div>
+                <div className="relative flex-1 w-full sm:max-w-md">
                     <select
                         value={selectedCourse || ''}
                         onChange={(e) => setSelectedCourse(e.target.value ? parseInt(e.target.value) : null)}
-                        className="w-full bg-bg-primary border border-white/10 px-4 py-2 rounded-lg text-white appearance-none cursor-pointer focus:outline-none focus:border-primary"
+                        className="select-field"
                     >
                         <option value="">All Courses</option>
                         {courseGrades.map(course => (
@@ -213,16 +203,17 @@ const StudentGrades = () => {
                             </option>
                         ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary pointer-events-none" />
                 </div>
             </div>
 
             {/* Grades by Course */}
             {filteredCourses.length === 0 ? (
-                <div className="bg-bg-secondary rounded-xl p-12 text-center">
-                    <Award className="w-16 h-16 text-text-secondary mx-auto mb-4 opacity-50" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No Grades Available</h3>
-                    <p className="text-text-secondary">
+                <div className="bg-bg-secondary rounded-xl p-16 text-center">
+                    <div className="p-4 bg-primary/10 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                        <Award className="w-10 h-10 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-3">No Grades Available</h3>
+                    <p className="text-text-secondary max-w-md mx-auto">
                         Complete assignments and quizzes to see your grades here
                     </p>
                 </div>
@@ -234,24 +225,32 @@ const StudentGrades = () => {
                         return (
                             <div
                                 key={course.course_id}
-                                className="bg-bg-secondary rounded-xl border border-white/5 overflow-hidden"
+                                className="bg-bg-secondary rounded-xl border border-white/5 overflow-hidden hover:border-primary/20 transition-all duration-300"
                             >
                                 {/* Course Header */}
-                                <div className="p-6 bg-gradient-to-r from-primary/20 to-blue-500/20 border-b border-white/10">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <h2 className="text-2xl font-bold text-white mb-1">
-                                                {course.course_title}
-                                            </h2>
-                                            <p className="text-text-secondary">{course.course_code}</p>
+                                <div className="p-6 sm:p-8 bg-gradient-to-br from-primary/10 via-primary/5 to-blue-500/10 border-b border-white/10">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center  gap-2 mb-2">
+                                                <div className="p-2 bg-primary/20 rounded-lg">
+                                                    <BookOpen className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                                                    {course.course_title}
+                                                </h2>
+                                            </div>
+                                            <p className="text-text-secondary font-medium ml-11">{course.course_code}</p>
                                         </div>
                                         {course.overall_percentage !== null && (
-                                            <div className="text-right">
-                                                <div className={`text-4xl font-bold ${getGradeColor(course.overall_percentage)}`}>
-                                                    {getGradeLetter(course.overall_percentage)}
-                                                </div>
-                                                <div className="text-sm text-text-secondary">
-                                                    {course.overall_percentage}%
+                                            <div className="flex items-center gap-4 ml-11 sm:ml-0">
+                                                <div className="text-right">
+                                                    <div className="text-sm font-medium text-text-secondary mb-1">Overall Grade</div>
+                                                    <div className={`text-5xl sm:text-6xl font-bold ${getGradeColor(course.overall_percentage)}`}>
+                                                        {getGradeLetter(course.overall_percentage)}
+                                                    </div>
+                                                    <div className="text-lg font-semibold text-text-secondary mt-1">
+                                                        {course.overall_percentage}%
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}

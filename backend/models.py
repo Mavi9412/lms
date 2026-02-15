@@ -113,13 +113,15 @@ class CourseUpdate(SQLModel):
     credit_hours: Optional[int] = None
     department_id: Optional[int] = None
 
-class Section(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class SectionBase(SQLModel):
     name: str # e.g. "Section A"
     course_id: int = Field(foreign_key="course.id")
     semester_id: int = Field(foreign_key="semester.id")
     teacher_id: Optional[int] = Field(default=None, foreign_key="user.id")
     schedule: Optional[str] = None # e.g. "Mon/Wed 10:00 - 11:30"
+
+class Section(SectionBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     
     course: Course = Relationship(back_populates="sections")
     semester: Semester = Relationship(back_populates="sections")
@@ -159,6 +161,11 @@ class UserUpdate(UserBase):
     password: Optional[str] = None
     program_id: Optional[int] = None
     batch_id: Optional[int] = None
+
+class SectionRead(SectionBase):
+    id: int
+    course: Optional[Course] = None
+    teacher: Optional["User"] = None
 
 class Enrollment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

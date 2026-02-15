@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,7 +7,8 @@ const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -24,6 +25,17 @@ const Navbar = () => {
     ];
 
     const isActive = (path: string) => location.pathname === path;
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+        setIsMobileMenuOpen(false);
+    };
+
+    const getDashboardLink = () => {
+        if (!user) return '/login';
+        return user.role === 'teacher' ? '/teacher' : '/dashboard';
+    };
 
     return (
         <nav
@@ -69,9 +81,20 @@ const Navbar = () => {
                             </Link>
                         </>
                     ) : (
-                        <Link to="/dashboard" className="btn btn-primary text-sm py-2 px-5 shadow-lg shadow-primary/25">
-                            Dashboard
-                        </Link>
+                        <div className="flex items-center gap-4">
+                            <Link
+                                to={getDashboardLink()}
+                                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                            >
+                                Dashboard
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                className="btn btn-primary text-sm py-2 px-5 shadow-lg shadow-primary/25"
+                            >
+                                Log out
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -120,13 +143,21 @@ const Navbar = () => {
                                 </Link>
                             </>
                         ) : (
-                            <Link
-                                to="/dashboard"
-                                className="btn btn-primary w-full justify-center"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                Dashboard
-                            </Link>
+                            <>
+                                <Link
+                                    to={getDashboardLink()}
+                                    className="text-center py-2 text-zinc-400 hover:text-white font-medium"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="btn btn-primary w-full justify-center"
+                                >
+                                    Log out
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

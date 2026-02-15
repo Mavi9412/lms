@@ -16,7 +16,7 @@ const AdminAllocations = () => {
         try {
             const [teachersRes, sectionsRes] = await Promise.all([
                 api.get('/admin/users?role=teacher'),
-                api.get('/academic/sections') // Need to ensure this endpoint exists or create it
+                api.get(`/academic/sections?_t=${Date.now()}`)
             ]);
             setTeachers(teachersRes.data);
             setSections(sectionsRes.data);
@@ -29,12 +29,23 @@ const AdminAllocations = () => {
 
     const handleAssign = async (sectionId: number, teacherId: string) => {
         if (!teacherId) return;
+
+        // Optimistic Update: Immediately update UI
+        const selectedTeacher = teachers.find(t => t.id === parseInt(teacherId));
+        setSections(prev => prev.map(sec =>
+            sec.id === sectionId
+                ? { ...sec, teacher: selectedTeacher }
+                : sec
+        ));
+
         try {
             await api.post(`/admin/sections/${sectionId}/assign-teacher/${teacherId}`);
-            alert('Teacher assigned successfully');
+            // Silently refresh data to ensure consistency
             fetchData();
         } catch (error) {
+            console.error('Assignment failed:', error);
             alert('Failed to assign teacher');
+            fetchData(); // Revert on error
         }
     };
 
@@ -75,7 +86,8 @@ const AdminAllocations = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <select
-                                            className="bg-bg-primary border border-white/10 rounded px-3 py-1.5 text-sm outline-none focus:border-primary"
+                                            key={`teacher-${section.id}-${section.teacher?.id || 'none'}`}
+                                            className="select-field"
                                             onChange={(e) => handleAssign(section.id, e.target.value)}
                                             defaultValue=""
                                         >
