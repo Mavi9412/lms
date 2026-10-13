@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -28,7 +28,7 @@ interface Quiz {
 export default function TakeQuiz() {
     const { quizId } = useParams<{ quizId: string }>();
     const navigate = useNavigate();
-    const { token, user } = useAuth();
+    const { token } = useAuth();
 
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [attemptId, setAttemptId] = useState<number | null>(null);
@@ -162,7 +162,7 @@ export default function TakeQuiz() {
             <div className="space-y-6">
                 {quiz.questions.map((question, index) => (
                     <div key={question.id} className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-                        <div class="flex items-start justify-between mb-4">
+                        <div className="flex items-start justify-between mb-4">
                             <h3 className="text-lg font-semibold text-white">
                                 Question {index + 1}
                                 <span className="ml-2 text-sm text-gray-400">({question.points} pts)</span>

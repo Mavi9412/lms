@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
     School,
-    BookOpen,
     Calendar,
     Plus,
     Trash2,

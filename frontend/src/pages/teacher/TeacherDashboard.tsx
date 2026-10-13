@@ -201,7 +201,7 @@ const TeacherDashboard = () => {
                                 <div
                                     key={task.assignment_id}
                                     className="bg-bg-primary rounded-lg p-4 border border-white/5 hover:border-orange-500/50 transition-colors cursor-pointer"
-                                    onClick={() => window.location.href = `/teacher/gradebook?assignment=${task.assignment_id}`}
+                                    onClick={() => window.location.href = `/teacher/assignments`}
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <div>

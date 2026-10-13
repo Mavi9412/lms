@@ -261,6 +261,15 @@ const TeacherQuizzes = () => {
                                         <span className="text-white font-medium">{quiz.passing_score}%</span>
                                     </div>
                                 )}
+                                {(quiz.available_from || quiz.available_until) && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Clock className="w-4 h-4 text-text-secondary" />
+                                        <span className="text-text-secondary">Window:</span>
+                                        <span className="text-white font-medium">
+                                            {formatDate(quiz.available_from)} → {formatDate(quiz.available_until)}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex gap-2">
