@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import Session, select
 from database import get_session
-from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow
+from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow, ensure_aware
 from auth import get_current_user
 from permissions import require_course_access
 from datetime import datetime
@@ -66,6 +66,10 @@ async def submit_assignment(
     assignment = session.get(Assignment, assignment_id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+
+    # Enforce deadline (due_date stored tz-aware; naive treated as UTC)
+    if assignment.due_date and utcnow() > ensure_aware(assignment.due_date):
+        raise HTTPException(status_code=400, detail="Submission deadline has passed")
 
     # Check if existing submission
     existing = session.exec(

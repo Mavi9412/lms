@@ -164,20 +164,33 @@ def start_quiz_attempt(
     if quiz.available_until and now > ensure_aware(quiz.available_until):
         raise HTTPException(status_code=400, detail="Quiz no longer available")
     
-    # Check max attempts
+    # Resume: if the student has an unfinished attempt (e.g. lost connection),
+    # hand it back instead of burning a new attempt
+    in_progress = session.exec(
+        select(QuizAttempt).where(
+            QuizAttempt.quiz_id == quiz_id,
+            QuizAttempt.student_id == current_user.id,
+            QuizAttempt.submitted_at == None,  # noqa: E711
+        )
+    ).first()
+    if in_progress:
+        return in_progress
+
+    # Check max attempts (only submitted attempts count)
     existing_attempts = session.exec(
         select(QuizAttempt).where(
             QuizAttempt.quiz_id == quiz_id,
-            QuizAttempt.student_id == current_user.id
+            QuizAttempt.student_id == current_user.id,
+            QuizAttempt.submitted_at != None,  # noqa: E711
         )
     ).all()
-    
+
     if len(existing_attempts) >= quiz.max_attempts:
         raise HTTPException(
             status_code=400,
             detail=f"Maximum attempts ({quiz.max_attempts}) reached"
         )
-    
+
     # Create new attempt
     attempt = QuizAttempt(
         quiz_id=quiz_id,
