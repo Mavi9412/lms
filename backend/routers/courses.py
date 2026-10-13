@@ -222,22 +222,32 @@ def delete_lesson(
     session.commit()
     return {"ok": True}
 
-# Enroll in a course (Enroll in DEFAULT Section A for now)
+# Enroll in a course
 @router.post("/{course_id}/enroll")
 def enroll_in_course(
     course_id: int,
+    section_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    # This is a bit hacky for Phase 1 compatibility
-    # validating student role
     if current_user.role != Role.student:
          raise HTTPException(status_code=403, detail="Only students can enroll")
 
-    # Find Section A
-    section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-    if not section:
-        raise HTTPException(status_code=404, detail="Default Section A not found for this course")
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if not course.is_published:
+        raise HTTPException(status_code=400, detail="Course is not published yet")
+
+    if section_id is not None:
+        section = session.get(Section, section_id)
+        if not section or section.course_id != course_id:
+            raise HTTPException(status_code=404, detail="Section not found for this course")
+    else:
+        # Backwards-compatible default: a section named "Section A"
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if not section:
+            raise HTTPException(status_code=400, detail="No default section for this course — pass section_id")
 
     existing = session.exec(select(Enrollment).where(Enrollment.student_id == current_user.id).where(Enrollment.section_id == section.id)).first()
     if existing:
@@ -246,7 +256,7 @@ def enroll_in_course(
     enrollment = Enrollment(student_id=current_user.id, section_id=section.id)
     session.add(enrollment)
     session.commit()
-    return {"ok": True}
+    return {"ok": True, "section_id": section.id}
 
 # --- Course Materials (Uploads) ---
 

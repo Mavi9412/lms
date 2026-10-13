@@ -34,3 +34,28 @@ def require_course_access(
             status_code=403,
             detail=f"Not authorized to {action} for this course",
         )
+
+
+def is_enrolled(session: Session, student_id: int, course_id: int) -> bool:
+    """True if the student is enrolled in any section of the course."""
+    from models import Enrollment
+    return (
+        session.exec(
+            select(Enrollment)
+            .join(Section, Section.id == Enrollment.section_id)
+            .where(
+                Enrollment.student_id == student_id,
+                Section.course_id == course_id,
+            )
+        ).first()
+        is not None
+    )
+
+
+def require_enrollment(session: Session, student_id: int, course_id: int) -> None:
+    """Raise 403 unless the student is enrolled in the course."""
+    if not is_enrolled(session, student_id, course_id):
+        raise HTTPException(
+            status_code=403,
+            detail="You must be enrolled in this course",
+        )

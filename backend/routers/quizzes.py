@@ -8,7 +8,7 @@ from models import (
     utcnow, ensure_aware
 )
 from auth import get_current_user
-from permissions import require_course_access
+from permissions import require_course_access, require_enrollment
 from datetime import datetime
 import json
 
@@ -156,7 +156,9 @@ def start_quiz_attempt(
     quiz = session.get(Quiz, quiz_id)
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
-    
+
+    require_enrollment(session, current_user.id, quiz.course_id)
+
     # Check availability
     now = utcnow()
     if quiz.available_from and now < ensure_aware(quiz.available_from):

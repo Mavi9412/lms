@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from database import get_session
 from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow, ensure_aware
 from auth import get_current_user
-from permissions import require_course_access
+from permissions import require_course_access, require_enrollment
 from datetime import datetime
 
 router = APIRouter(
@@ -66,6 +66,8 @@ async def submit_assignment(
     assignment = session.get(Assignment, assignment_id)
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
+
+    require_enrollment(session, current_user.id, assignment.course_id)
 
     # Enforce deadline (due_date stored tz-aware; naive treated as UTC)
     if assignment.due_date and utcnow() > ensure_aware(assignment.due_date):
