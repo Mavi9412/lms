@@ -20,6 +20,7 @@ interface Attempt {
     score: number | null;
     max_score: number | null;
     percentage: number | null;
+    needs_grading?: boolean;
 }
 
 interface AttemptWithStudent extends Attempt {
@@ -37,6 +38,8 @@ const ViewQuizAttemptsModal = ({ quiz, onClose }: Props) => {
     const [loading, setLoading] = useState(true);
     const [showDetails, setShowDetails] = useState(false);
     const [attemptDetails, setAttemptDetails] = useState<any>(null);
+    const [gradeInputs, setGradeInputs] = useState<Record<number, string>>({});
+
 
     useEffect(() => {
         fetchAttempts();
@@ -85,6 +88,25 @@ const ViewQuizAttemptsModal = ({ quiz, onClose }: Props) => {
         } catch (error) {
             console.error('Failed to fetch attempt details:', error);
             alert('Failed to load attempt details');
+        }
+    };
+
+    const handleGradeAnswer = async (attemptId: number, questionId: number, maxPoints: number) => {
+        const raw = gradeInputs[questionId];
+        const points = parseFloat(raw);
+        if (isNaN(points) || points < 0 || points > maxPoints) {
+            alert(`Enter points between 0 and ${maxPoints}`);
+            return;
+        }
+        try {
+            await api.post(`/quizzes/attempts/${attemptId}/grade-answer`, {
+                question_id: questionId,
+                points_earned: points,
+            });
+            handleViewDetails(attemptId);
+            fetchAttempts();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to grade answer');
         }
     };
 
@@ -332,10 +354,34 @@ const ViewQuizAttemptsModal = ({ quiz, onClose }: Props) => {
                                                 {result.student_answer || 'No answer'}
                                             </span>
                                         </p>
-                                        {!result.is_correct && (
+                                        {!result.is_correct && result.question_type !== 'short_answer' && (
                                             <p className="text-text-secondary">
                                                 Correct Answer: <span className="text-green-400">{result.correct_answer}</span>
                                             </p>
+                                        )}
+                                        {result.points_earned === null && (
+                                            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                                                <p className="text-sm text-amber-400 font-medium mb-2">Needs manual grading</p>
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={result.points}
+                                                        step={0.5}
+                                                        value={gradeInputs[result.question_id] || ''}
+                                                        onChange={(e) => setGradeInputs(prev => ({ ...prev, [result.question_id]: e.target.value }))}
+                                                        placeholder={`0 - ${result.points}`}
+                                                        className="w-28 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded text-white text-sm"
+                                                    />
+                                                    <span className="text-sm text-text-secondary">/ {result.points} pts</span>
+                                                    <button
+                                                        onClick={() => handleGradeAnswer(attemptDetails.attempt.id, result.question_id, result.points)}
+                                                        className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg font-medium"
+                                                    >
+                                                        Grade
+                                                    </button>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

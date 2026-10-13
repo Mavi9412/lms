@@ -111,6 +111,9 @@ const CourseDetails = () => {
     const [threads, setThreads] = useState<any[]>([]);
     const [isCreateThreadModalOpen, setIsCreateThreadModalOpen] = useState(false);
 
+    // Lesson progress (students)
+    const [progress, setProgress] = useState<{ completed_lesson_ids: number[]; total_lessons: number; percentage: number } | null>(null);
+
     // Rubrics (read-only for students)
     const [rubrics, setRubrics] = useState<any[]>([]);
     const [expandedRubric, setExpandedRubric] = useState<number | null>(null);
@@ -124,7 +127,37 @@ const CourseDetails = () => {
         fetchAnnouncements();
         fetchThreads();
         fetchRubrics();
+        fetchProgress();
     }, [id]);
+
+    const fetchProgress = async () => {
+        try {
+            const response = await api.get(`/courses/${id}/progress`);
+            setProgress(response.data);
+        } catch {
+            setProgress(null); // not a student / not enrolled
+        }
+    };
+
+    const toggleLessonComplete = async (lessonId: number, completed: boolean) => {
+        try {
+            if (completed) {
+                await api.delete(`/courses/${id}/lessons/${lessonId}/complete`);
+            } else {
+                await api.post(`/courses/${id}/lessons/${lessonId}/complete`);
+            }
+            fetchProgress();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to update progress');
+        }
+    };
+
+    const resumeLessonId = (() => {
+        if (!progress || !course) return null;
+        const done = new Set(progress.completed_lesson_ids);
+        const next = [...course.lessons].sort((a, b) => a.order - b.order).find(l => !done.has(l.id));
+        return next ? next.id : null;
+    })();
 
     const fetchCourseDetails = async () => {
         try {
@@ -542,6 +575,30 @@ const CourseDetails = () => {
                                 </button>
                             )}
                         </div>
+                        {isStudent && progress && progress.total_lessons > 0 && (
+                            <div className="mb-6 p-4 bg-bg-secondary/30 border border-white/5 rounded-xl">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-text-secondary">
+                                        {progress.completed_lesson_ids.length} of {progress.total_lessons} lessons complete
+                                    </span>
+                                    <span className="text-sm font-semibold text-primary">{progress.percentage}%</span>
+                                </div>
+                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress.percentage}%` }} />
+                                </div>
+                                {resumeLessonId && (
+                                    <button
+                                        onClick={() => {
+                                            setExpandedLessons(prev => new Set(prev).add(resumeLessonId));
+                                            document.getElementById(`lesson-${resumeLessonId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }}
+                                        className="mt-3 btn btn-primary text-sm flex items-center gap-2"
+                                    >
+                                        <PlayCircle className="w-4 h-4" /> Resume learning
+                                    </button>
+                                )}
+                            </div>
+                        )}
                         {course.lessons.length === 0 ? (
                             <div className="text-center py-12 text-text-secondary">
                                 <p>No lessons available yet.</p>
@@ -549,13 +606,25 @@ const CourseDetails = () => {
                         ) : (
                             <div className="space-y-4">
                                 {course.lessons.map((lesson, index) => (
-                                    <div key={lesson.id} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-5">
+                                    <div key={lesson.id} id={`lesson-${lesson.id}`} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-5">
                                         <div onClick={() => toggleLesson(lesson.id)} className="flex items-center justify-between cursor-pointer">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{index + 1}</div>
                                                 <h3 className="font-semibold text-lg">{lesson.title}</h3>
                                             </div>
                                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {isStudent && progress && (
+                                                    <button
+                                                        onClick={() => toggleLessonComplete(lesson.id, progress.completed_lesson_ids.includes(lesson.id))}
+                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${progress.completed_lesson_ids.includes(lesson.id)
+                                                            ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
+                                                            : 'bg-white/5 text-text-secondary hover:bg-white/10 hover:text-white'}`}
+                                                        title={progress.completed_lesson_ids.includes(lesson.id) ? 'Mark as incomplete' : 'Mark as complete'}
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        {progress.completed_lesson_ids.includes(lesson.id) ? 'Done' : 'Mark done'}
+                                                    </button>
+                                                )}
                                                 {isOwner && (
                                                     <>
                                                         <button
