@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
-from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, Semester, Department, CourseMaterial
+from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow
 from datetime import datetime
 from auth import get_current_user
 import shutil
@@ -192,6 +192,38 @@ def create_lesson(
     session.refresh(db_lesson)
     return db_lesson
 
+@router.put("/{course_id}/lessons/{lesson_id}", response_model=Lesson)
+def update_lesson(
+    course_id: int,
+    lesson_id: int,
+    lesson_update: LessonUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    lesson = session.get(Lesson, lesson_id)
+    if not lesson or lesson.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+
+    # Check permissions (same rule as create/delete)
+    is_authorized = False
+    if current_user.role == Role.admin:
+        is_authorized = True
+    else:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
+        if section and section.teacher_id == current_user.id:
+            is_authorized = True
+
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized to edit lessons in this course")
+
+    update_data = lesson_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(lesson, field, value)
+    session.add(lesson)
+    session.commit()
+    session.refresh(lesson)
+    return lesson
+
 @router.delete("/{course_id}/lessons/{lesson_id}")
 def delete_lesson(
     course_id: int,
@@ -276,7 +308,7 @@ def upload_course_material(
     os.makedirs(upload_dir, exist_ok=True)
     
     # Generate unique filename
-    file_location = f"{upload_dir}/{course_id}_{int(datetime.utcnow().timestamp())}_{file.filename}"
+    file_location = f"{upload_dir}/{course_id}_{int(utcnow().timestamp())}_{file.filename}"
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         

@@ -4,7 +4,8 @@ from sqlmodel import Session, select
 from database import get_session
 from models import (
     User, Role, Course, Quiz, Question, QuizAttempt, Answer,
-    QuizCreate, QuestionCreate, QuizSubmission, QuestionType
+    QuizCreate, QuestionCreate, QuizSubmission, QuestionType,
+    utcnow, ensure_aware
 )
 from auth import get_current_user
 from datetime import datetime
@@ -36,8 +37,8 @@ def create_quiz(
         time_limit=quiz_data.time_limit,
         max_attempts=quiz_data.max_attempts,
         passing_score=quiz_data.passing_score,
-        available_from=datetime.fromisoformat(quiz_data.available_from) if quiz_data.available_from else None,
-        available_until=datetime.fromisoformat(quiz_data.available_until) if quiz_data.available_until else None,
+        available_from=ensure_aware(datetime.fromisoformat(quiz_data.available_from)) if quiz_data.available_from else None,
+        available_until=ensure_aware(datetime.fromisoformat(quiz_data.available_until)) if quiz_data.available_until else None,
         created_by=current_user.id
     )
     session.add(quiz)
@@ -159,10 +160,10 @@ def start_quiz_attempt(
         raise HTTPException(status_code=404, detail="Quiz not found")
     
     # Check availability
-    now = datetime.utcnow()
-    if quiz.available_from and now < quiz.available_from:
+    now = utcnow()
+    if quiz.available_from and now < ensure_aware(quiz.available_from):
         raise HTTPException(status_code=400, detail="Quiz not yet available")
-    if quiz.available_until and now > quiz.available_until:
+    if quiz.available_until and now > ensure_aware(quiz.available_until):
         raise HTTPException(status_code=400, detail="Quiz no longer available")
     
     # Check max attempts
@@ -255,7 +256,7 @@ def submit_quiz(
         session.add(answer)
     
     # Update attempt
-    attempt.submitted_at = datetime.utcnow()
+    attempt.submitted_at = utcnow()
     attempt.score = total_score
     attempt.max_score = max_score
     attempt.percentage = (total_score / max_score * 100) if max_score > 0 else 0

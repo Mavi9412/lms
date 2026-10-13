@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 from database import get_session
-from models import User, UserCreate, Role
+from models import User, UserCreate, UserRead, Role
 from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
@@ -18,11 +18,11 @@ router = APIRouter(
     tags=["auth"],
 )
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=UserRead)
 def get_current_user_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
-@router.post("/signup", response_model=User)
+@router.post("/signup", response_model=UserRead)
 def signup(user: UserCreate, session: Session = Depends(get_session)):
     statement = select(User).where(User.email == user.email)
     existing_user = session.exec(statement).first()

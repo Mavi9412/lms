@@ -43,6 +43,9 @@ app.include_router(announcements.router)
 app.include_router(notifications.router)
 app.include_router(discussions.router)
 
+import os
+
+os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")

@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import Session, select
 from database import get_session
-from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course
+from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow
 from auth import get_current_user
 from datetime import datetime
 
@@ -93,7 +93,7 @@ async def submit_assignment(
         os.makedirs(upload_dir, exist_ok=True)
         
         # Generate unique filename
-        timestamp = int(datetime.utcnow().timestamp())
+        timestamp = int(utcnow().timestamp())
         file_extension = os.path.splitext(file.filename)[1]
         unique_filename = f"{assignment_id}_{current_user.id}_{timestamp}{file_extension}"
         file_path = f"{upload_dir}/{unique_filename}"

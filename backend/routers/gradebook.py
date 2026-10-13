@@ -1,9 +1,12 @@
-from typing import List
+from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
-from models import User, Role, Course, Section, Enrollment, Assignment, Submission
+from models import (
+    User, Role, Course, Section, Enrollment, Assignment, Submission,
+    GradingScale, AuditLog,
+)
 from auth import get_current_user
 
 router = APIRouter(
@@ -134,3 +137,111 @@ def get_course_gradebook(
         assignments=assignment_list,
         students=students_data
     )
+
+
+def _percentage_to_letter(percentage: float, scales: List[GradingScale]) -> str:
+    """Map a percentage to a letter grade using the admin-defined scale,
+    falling back to a standard scale when none is configured."""
+    ordered = sorted(scales, key=lambda s: s.min_percentage, reverse=True)
+    for scale in ordered:
+        if percentage >= scale.min_percentage:
+            return scale.grade_letter
+    if not ordered:
+        if percentage >= 90:
+            return "A"
+        if percentage >= 85:
+            return "B+"
+        if percentage >= 80:
+            return "B"
+        if percentage >= 75:
+            return "C+"
+        if percentage >= 70:
+            return "C"
+        if percentage >= 60:
+            return "D"
+        return "F"
+    return ordered[-1].grade_letter
+
+
+@router.post("/course/{course_id}/publish")
+def publish_final_grades(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """
+    Compute final letter grades from the gradebook and write them to each
+    enrollment in this course's sections. Teacher (of this course) and Admin
+    only. Re-publishing overwrites previous letters.
+    """
+    if current_user.role not in [Role.teacher, Role.admin]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if current_user.role == Role.teacher:
+        teaches = session.exec(
+            select(Section).where(
+                Section.course_id == course_id,
+                Section.teacher_id == current_user.id,
+            )
+        ).first()
+        if not teaches:
+            raise HTTPException(status_code=403, detail="Not authorized for this course")
+
+    assignments = session.exec(
+        select(Assignment).where(Assignment.course_id == course_id)
+    ).all()
+    if not assignments:
+        raise HTTPException(status_code=400, detail="No assignments in this course yet")
+
+    enrollments = session.exec(
+        select(Enrollment).join(Section).where(Section.course_id == course_id)
+    ).all()
+
+    scales = session.exec(select(GradingScale)).all()
+
+    published: Dict[int, str] = {}
+    for enrollment in enrollments:
+        submissions = session.exec(
+            select(Submission)
+            .join(Assignment)
+            .where(
+                Submission.student_id == enrollment.student_id,
+                Assignment.course_id == course_id,
+            )
+        ).all()
+
+        total_points = 0.0
+        max_points = 0.0
+        for assignment in assignments:
+            submission = next(
+                (s for s in submissions if s.assignment_id == assignment.id), None
+            )
+            if submission and submission.grade is not None:
+                total_points += submission.grade
+            max_points += assignment.max_points
+
+        percentage = (total_points / max_points * 100) if max_points > 0 else 0
+        letter = _percentage_to_letter(percentage, list(scales))
+        enrollment.grade = letter
+        session.add(enrollment)
+        published[enrollment.student_id] = letter
+
+    session.add(
+        AuditLog(
+            action="FINAL_GRADE_PUBLISH",
+            performed_by=current_user.id,
+            target_id=course_id,
+            details=f"Published final grades for course '{course.title}' ({len(published)} students)",
+        )
+    )
+    session.commit()
+
+    return {
+        "course_id": course_id,
+        "published": len(published),
+        "grades": published,
+    }
