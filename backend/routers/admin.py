@@ -80,6 +80,7 @@ def create_user(
     )
     session.add(log)
     session.commit()
+    session.refresh(new_user)
     
     return new_user
 
@@ -123,6 +124,7 @@ def update_user(
     )
     session.add(log)
     session.commit()
+    session.refresh(user)
     
     return user
 
@@ -275,6 +277,7 @@ def create_batch(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return batch
 
@@ -308,6 +311,7 @@ def update_batch(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return batch
 
@@ -336,6 +340,7 @@ def toggle_batch_active(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return {"message": f"Batch {'activated' if batch.is_active else 'deactivated'}", "is_active": batch.is_active}
 
@@ -432,6 +437,7 @@ def create_course(
     )
     session.add(log)
     session.commit()
+    session.refresh(course_data)
     
     return course_data
 
@@ -471,6 +477,7 @@ def update_course(
     )
     session.add(log)
     session.commit()
+    session.refresh(course)
     
     return course
 
@@ -498,6 +505,7 @@ def approve_course(
     )
     session.add(log)
     session.commit()
+    session.refresh(course)
     
     return {"message": "Course approved", "is_approved": True}
 
@@ -526,6 +534,7 @@ def toggle_course_publish(
     )
     session.add(log)
     session.commit()
+    session.refresh(course)
     
     return {"message": f"Course {'published' if course.is_published else 'unpublished'}", "is_published": course.is_published}
 

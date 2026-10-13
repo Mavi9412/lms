@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
+from pydantic import field_validator, EmailStr
 from sqlmodel import Field, SQLModel, Relationship
 from enum import Enum
 
@@ -60,10 +61,20 @@ class BatchCreate(SQLModel):
     start_date: datetime
     end_date: Optional[datetime] = None
 
+    @field_validator("start_date", "end_date", mode="after")
+    @classmethod
+    def _aware(cls, v):
+        return ensure_aware(v)
+
 class BatchUpdate(SQLModel):
     name: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
+
+    @field_validator("start_date", "end_date", mode="after")
+    @classmethod
+    def _aware(cls, v):
+        return ensure_aware(v)
 
 class Semester(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -152,7 +163,7 @@ class Section(SectionBase, table=True):
 # --- Users & Enrollments ---
 
 class UserBase(SQLModel):
-    email: str = Field(unique=True, index=True)
+    email: EmailStr = Field(unique=True, index=True)
     full_name: str
     role: Role = Field(default=Role.student)
     is_active: bool = True
@@ -174,7 +185,7 @@ class User(UserBase, table=True):
     submissions: List["Submission"] = Relationship(back_populates="student", cascade_delete=True)
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8, max_length=128)
     program_id: Optional[int] = None
     batch_id: Optional[int] = None
 
@@ -222,6 +233,11 @@ class AssignmentCreate(SQLModel):
     due_date: datetime
     max_points: int = 100
     course_id: int
+
+    @field_validator("due_date", mode="after")
+    @classmethod
+    def _aware(cls, v):
+        return ensure_aware(v)
 
 class Submission(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -35,7 +35,7 @@ def signup(user: UserCreate, session: Session = Depends(get_session)):
         email=user.email,
         full_name=user.full_name,
         hashed_password=hashed_password,
-        role=user.role,
+        role=Role.student,  # public signup is always student; admins assign roles via /admin/users
         program_id=user.program_id
     )
     session.add(db_user)

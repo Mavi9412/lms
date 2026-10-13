@@ -162,7 +162,15 @@ def grade_submission(
     submission = session.get(Submission, submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
-        
+
+    assignment = session.get(Assignment, submission.assignment_id)
+    if assignment and grade_data.grade is not None:
+        if grade_data.grade < 0 or grade_data.grade > assignment.max_points:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Grade must be between 0 and {assignment.max_points}",
+            )
+
     submission.grade = grade_data.grade
     submission.feedback = grade_data.feedback
     session.add(submission)

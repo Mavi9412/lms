@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
 from models import (
+    ensure_aware,
     User, Role, Section, Enrollment, Attendance, AttendanceStatus, 
     AttendanceCreate, AttendanceMarkRequest
 )
@@ -114,9 +115,9 @@ def mark_attendance(
     if current_user.role != Role.admin and section.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized for this section")
     
-    # Parse date
+    # Parse date (naive input assumed UTC)
     try:
-        attendance_date = datetime.fromisoformat(request.date.replace('Z', '+00:00'))
+        attendance_date = ensure_aware(datetime.fromisoformat(request.date.replace('Z', '+00:00')))
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
     
@@ -168,7 +169,7 @@ def get_attendance_records(
     
     if date:
         try:
-            filter_date = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            filter_date = ensure_aware(datetime.fromisoformat(date.replace('Z', '+00:00')))
             query = query.where(Attendance.date == filter_date)
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date format")
@@ -342,14 +343,14 @@ def get_attendance_report(
     # Apply date filters if provided
     if start_date:
         try:
-            start_dt = datetime.fromisoformat(start_date)
+            start_dt = ensure_aware(datetime.fromisoformat(start_date))
             attendance_query = attendance_query.where(Attendance.date >= start_dt)
         except:
             pass
     
     if end_date:
         try:
-            end_dt = datetime.fromisoformat(end_date)
+            end_dt = ensure_aware(datetime.fromisoformat(end_date))
             attendance_query = attendance_query.where(Attendance.date <= end_dt)
         except:
             pass

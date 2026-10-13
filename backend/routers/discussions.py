@@ -125,7 +125,7 @@ def delete_thread(
 @router.post("/{thread_id}/replies", response_model=ThreadReply)
 def create_reply(
     thread_id: int,
-    content: str,
+    reply_data: ThreadReplyCreate,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -133,10 +133,10 @@ def create_reply(
     thread = session.get(DiscussionThread, thread_id)
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    
+
     reply = ThreadReply(
         thread_id=thread_id,
-        content=content,
+        content=reply_data.content,
         created_by=current_user.id
     )
     
