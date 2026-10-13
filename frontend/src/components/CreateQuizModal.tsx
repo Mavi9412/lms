@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Plus, Trash2, GripVertical } from 'lucide-react';
+import { X, Trash2, GripVertical } from 'lucide-react';
 import api from '../services/api';
 
 interface CreateQuizModalProps {
