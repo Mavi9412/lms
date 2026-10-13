@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from pydantic import field_validator, EmailStr
 from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import UniqueConstraint
 from enum import Enum
 
 
@@ -92,6 +93,7 @@ class Course(SQLModel, table=True):
     department_id: int = Field(foreign_key="department.id")
     is_approved: bool = Field(default=False)  # Admin approval
     is_published: bool = Field(default=False)  # Visibility to students
+    is_archived: bool = Field(default=False)  # Archived courses hidden from catalog
     
     department: Department = Relationship(back_populates="courses")
     sections: List["Section"] = Relationship(back_populates="course")
@@ -118,6 +120,29 @@ class Lesson(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
 
     course: Course = Relationship(back_populates="lessons")
+
+
+class LessonProgress(SQLModel, table=True):
+    """Tracks which lessons a student has marked complete."""
+    __table_args__ = (UniqueConstraint("student_id", "lesson_id", name="uq_progress_student_lesson"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key="user.id")
+    lesson_id: int = Field(foreign_key="lesson.id", ondelete="CASCADE")
+    completed_at: datetime = Field(default_factory=utcnow)
+
+
+class Certificate(SQLModel, table=True):
+    """Course completion certificate with a public verification code."""
+    __table_args__ = (UniqueConstraint("verification_code", name="uq_certificate_code"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key="user.id")
+    course_id: int = Field(foreign_key="course.id")
+    verification_code: str = Field(index=True)
+    grade: Optional[str] = None  # final letter grade at issue time
+    issued_at: datetime = Field(default_factory=utcnow)
+    issued_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
 class LessonCreate(SQLModel):
     title: str
@@ -319,6 +344,7 @@ class AttendanceMarkRequest(SQLModel):
 class QuestionType(str, Enum):
     mcq = "mcq"
     true_false = "true_false"
+    short_answer = "short_answer"
 
 class Quiz(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -347,7 +373,7 @@ class Question(SQLModel, table=True):
     
     # For MCQ and True/False
     options: Optional[str] = None  # JSON string of options array
-    correct_answer: str  # For MCQ: option index or text, For T/F: "true" or "false"
+    correct_answer: Optional[str] = None  # MCQ: option text, T/F: "true"/"false", short_answer: model answer (optional)
     
     quiz: Quiz = Relationship(back_populates="questions")
     answers: List["Answer"] = Relationship(back_populates="question", cascade_delete=True)
@@ -362,6 +388,7 @@ class QuizAttempt(SQLModel, table=True):
     score: Optional[float] = None  # calculated score
     max_score: Optional[float] = None
     percentage: Optional[float] = None
+    needs_grading: bool = Field(default=False)  # True when short answers await manual grading
     
     quiz: Quiz = Relationship(back_populates="attempts")
     student: User = Relationship()

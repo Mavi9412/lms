@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
 from database import get_session
-from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow
+from models import LessonProgress, Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow
 from datetime import datetime
 from auth import get_current_user
-from permissions import require_course_access
+from permissions import require_course_access, require_enrollment
 import shutil
 import os
 from fastapi import UploadFile, File
@@ -18,7 +18,10 @@ router = APIRouter(
 
 @router.get("/", response_model=List[Course])
 def read_courses(skip: int = 0, limit: int = 100, session: Session = Depends(get_session)):
-    courses = session.exec(select(Course).offset(skip).limit(limit)).all()
+    # Public catalog: archived courses are hidden (admins use /admin/courses)
+    courses = session.exec(
+        select(Course).where(Course.is_archived == False).offset(skip).limit(limit)  # noqa: E711
+    ).all()
     return courses
 
 @router.get("/{course_id}", response_model=Course)
@@ -238,6 +241,8 @@ def enroll_in_course(
         raise HTTPException(status_code=404, detail="Course not found")
     if not course.is_published:
         raise HTTPException(status_code=400, detail="Course is not published yet")
+    if course.is_archived:
+        raise HTTPException(status_code=400, detail="Course is archived — enrollment closed")
 
     if section_id is not None:
         section = session.get(Section, section_id)
@@ -328,3 +333,103 @@ def delete_course_material(
     session.delete(material)
     session.commit()
     return {"ok": True}
+
+
+# --- Lesson Progress Tracking ---
+
+@router.post("/{course_id}/lessons/{lesson_id}/complete")
+def complete_lesson(
+    course_id: int,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Student marks a lesson complete."""
+    if current_user.role != Role.student:
+        raise HTTPException(status_code=403, detail="Only students track progress")
+    lesson = session.get(Lesson, lesson_id)
+    if not lesson or lesson.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    require_enrollment(session, current_user.id, course_id)
+
+    existing = session.exec(
+        select(LessonProgress)
+        .where(LessonProgress.student_id == current_user.id)
+        .where(LessonProgress.lesson_id == lesson_id)
+    ).first()
+    if existing:
+        return {"ok": True, "already_completed": True}
+    progress = LessonProgress(student_id=current_user.id, lesson_id=lesson_id)
+    session.add(progress)
+    session.commit()
+    return {"ok": True, "completed_at": progress.completed_at.isoformat()}
+
+
+@router.delete("/{course_id}/lessons/{lesson_id}/complete")
+def uncomplete_lesson(
+    course_id: int,
+    lesson_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Student un-marks a lesson."""
+    if current_user.role != Role.student:
+        raise HTTPException(status_code=403, detail="Only students track progress")
+    progress = session.exec(
+        select(LessonProgress)
+        .where(LessonProgress.student_id == current_user.id)
+        .where(LessonProgress.lesson_id == lesson_id)
+    ).first()
+    if not progress:
+        raise HTTPException(status_code=404, detail="Lesson not marked complete")
+    session.delete(progress)
+    session.commit()
+    return {"ok": True}
+
+
+@router.get("/{course_id}/progress")
+def my_course_progress(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Student's own progress: completed lesson ids + percentage."""
+    if current_user.role != Role.student:
+        raise HTTPException(status_code=403, detail="Only students track progress")
+    require_enrollment(session, current_user.id, course_id)
+    lessons = session.exec(select(Lesson).where(Lesson.course_id == course_id)).all()
+    done = session.exec(
+        select(LessonProgress.lesson_id).where(LessonProgress.student_id == current_user.id)
+    ).all()
+    done_ids = [lid for lid in done if any(l.id == lid for l in lessons)]
+    total = len(lessons)
+    return {
+        "course_id": course_id,
+        "completed_lesson_ids": done_ids,
+        "total_lessons": total,
+        "percentage": round(len(done_ids) / total * 100, 1) if total else 0,
+    }
+
+
+@router.get("/{course_id}/students/{student_id}/progress")
+def student_course_progress(
+    course_id: int,
+    student_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Teacher/admin view of a student's progress in a course."""
+    require_course_access(session, current_user, course_id, "view progress for this course")
+    lessons = session.exec(select(Lesson).where(Lesson.course_id == course_id)).all()
+    done = session.exec(
+        select(LessonProgress.lesson_id).where(LessonProgress.student_id == student_id)
+    ).all()
+    done_ids = [lid for lid in done if any(l.id == lid for l in lessons)]
+    total = len(lessons)
+    return {
+        "course_id": course_id,
+        "student_id": student_id,
+        "completed_lesson_ids": done_ids,
+        "total_lessons": total,
+        "percentage": round(len(done_ids) / total * 100, 1) if total else 0,
+    }

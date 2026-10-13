@@ -2,9 +2,10 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from database import get_session
-from models import User, Role, Announcement, AnnouncementCreate
+from models import User, Role, Announcement, AnnouncementCreate, NotificationType
 from auth import get_current_user
-from permissions import require_course_access
+from permissions import require_course_access, enrolled_student_ids
+from routers.notifications import create_notification
 
 router = APIRouter(
     prefix="/announcements",
@@ -29,9 +30,16 @@ def create_announcement(
     session.add(announcement)
     session.commit()
     session.refresh(announcement)
-    
-    # TODO: Create notifications for students enrolled in the course
-    
+
+    for sid in enrolled_student_ids(session, announcement.course_id):
+        create_notification(
+            session, sid, NotificationType.announcement_posted,
+            f"Announcement: {announcement.title}",
+            announcement.content[:200] if announcement.content else "",
+            link=f"/courses/{announcement.course_id}",
+        )
+
+    session.refresh(announcement)
     return announcement
 
 

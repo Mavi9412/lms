@@ -4,9 +4,10 @@ from sqlmodel import Session, select
 from database import get_session
 from models import (
     User, Role, DiscussionThread, ThreadReply,
-    DiscussionThreadCreate, ThreadReplyCreate
+    DiscussionThreadCreate, ThreadReplyCreate, NotificationType
 )
 from auth import get_current_user
+from routers.notifications import create_notification
 
 router = APIRouter(
     prefix="/discussions",
@@ -143,9 +144,16 @@ def create_reply(
     session.add(reply)
     session.commit()
     session.refresh(reply)
-    
-    # TODO: Create notification for thread creator
-    
+
+    if thread.created_by != current_user.id:
+        create_notification(
+            session, thread.created_by, NotificationType.discussion_reply,
+            "New reply to your discussion",
+            f"{current_user.full_name} replied to '{thread.title}'.",
+            link=f"/courses/{thread.course_id}",
+        )
+
+    session.refresh(reply)
     return reply
 
 

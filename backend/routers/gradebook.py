@@ -6,6 +6,7 @@ from database import get_session
 from models import (
     User, Role, Course, Section, Enrollment, Assignment, Submission,
     GradingScale, AuditLog, Quiz, Question, QuizAttempt,
+    Attendance, AttendanceStatus, AttendancePolicy,
 )
 from auth import get_current_user
 
@@ -24,6 +25,7 @@ class StudentGrade(BaseModel):
     total_points: float
     max_points: float
     percentage: float
+    attendance_percentage: Optional[float] = None
 
 
 class GradebookResponse(BaseModel):
@@ -74,6 +76,7 @@ def get_course_gradebook(
             max_points=sum(a.max_points for a in assignments)
             + sum(qmax for _, qmax in quizzes),
             percentage=percentages[student_id],
+            attendance_percentage=_attendance_percentage(session, student.id, course_id),
         ))
 
     return GradebookResponse(
@@ -180,6 +183,26 @@ def _compute_scores(
     return list(assignments), [(q, quiz_max[q.id]) for q in quizzes], grades_by_student, totals, percentages
 
 
+def _attendance_percentage(session: Session, student_id: int, course_id: int) -> Optional[float]:
+    """Attendance % for a student across all sections of a course. None if no records."""
+    section_ids = session.exec(
+        select(Section.id).where(Section.course_id == course_id)
+    ).all()
+    if not section_ids:
+        return None
+    records = session.exec(
+        select(Attendance).where(
+            Attendance.student_id == student_id,
+            Attendance.section_id.in_(section_ids),
+        )
+    ).all()
+    if not records:
+        return None
+    present = sum(1 for r in records if r.status == AttendanceStatus.present)
+    late = sum(1 for r in records if r.status == AttendanceStatus.late)
+    return round((present + late * 0.5) / len(records) * 100, 2)
+
+
 def _authorize_gradebook_access(
     course_id: int, current_user: User, session: Session
 ) -> Course:
@@ -252,13 +275,29 @@ def publish_final_grades(
 
     scales = session.exec(select(GradingScale)).all()
 
+    policy = session.exec(
+        select(AttendancePolicy).where(AttendancePolicy.is_active == True)
+    ).first()
+    min_attendance = policy.min_percentage if policy else None
+
     published: Dict[int, str] = {}
+    warnings: list = []
     for enrollment in enrollments:
         percentage = percentages.get(enrollment.student_id, 0)
         letter = _percentage_to_letter(percentage, list(scales))
         enrollment.grade = letter
         session.add(enrollment)
         published[enrollment.student_id] = letter
+        att = _attendance_percentage(session, enrollment.student_id, course_id)
+        if min_attendance is not None and att is not None and att < min_attendance:
+            student = session.get(User, enrollment.student_id)
+            warnings.append({
+                "student_id": enrollment.student_id,
+                "student_name": student.full_name if student else "Unknown",
+                "attendance_percentage": att,
+                "required": min_attendance,
+                "message": f"Below minimum attendance ({min_attendance}%)",
+            })
 
     session.add(
         AuditLog(
@@ -273,5 +312,6 @@ def publish_final_grades(
     return {
         "course_id": course_id,
         "published": len(published),
+        "attendance_warnings": warnings,
         "grades": published,
     }

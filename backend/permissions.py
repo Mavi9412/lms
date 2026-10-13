@@ -59,3 +59,15 @@ def require_enrollment(session: Session, student_id: int, course_id: int) -> Non
             status_code=403,
             detail="You must be enrolled in this course",
         )
+
+
+def enrolled_student_ids(session: Session, course_id: int) -> list[int]:
+    """All student ids enrolled in any section of the course."""
+    from models import Enrollment, User, Role
+    rows = session.exec(
+        select(User.id)
+        .join(Enrollment, Enrollment.student_id == User.id)
+        .join(Section, Section.id == Enrollment.section_id)
+        .where(Section.course_id == course_id, User.role == Role.student)
+    ).all()
+    return list(rows)

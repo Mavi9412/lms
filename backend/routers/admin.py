@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from database import get_session
-from models import User, Role, Department, Program, Batch, Course, Section, Semester, AuditLog, UserCreate, UserUpdate, CourseUpdate, BatchCreate, BatchUpdate
+from models import User, Role, Department, Program, Batch, Course, Section, Semester, AuditLog, UserCreate, UserUpdate, CourseUpdate, BatchCreate, BatchUpdate, GradingScale, AttendancePolicy
 from auth import get_current_user, get_password_hash
 from typing import List, Dict, Any, Optional
 
@@ -602,3 +602,127 @@ def assign_teacher(
     session.add(section)
     session.commit()
     return {"message": f"Assigned {teacher.full_name} to {section.name}"}
+
+
+# --- Grading Scales ---
+
+@router.get("/grading-scales", response_model=List[GradingScale])
+def list_grading_scales(
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    """List all grading scale bands (used when publishing final grades)."""
+    return session.exec(select(GradingScale).order_by(GradingScale.min_percentage.desc())).all()
+
+
+@router.post("/grading-scales", response_model=GradingScale)
+def create_grading_scale(
+    scale_data: GradingScale,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    """Add a grading band, e.g. A / 90 / 4.0."""
+    scale = GradingScale(
+        grade_letter=scale_data.grade_letter,
+        min_percentage=scale_data.min_percentage,
+        gpa_point=scale_data.gpa_point,
+    )
+    session.add(scale)
+    session.commit()
+    session.refresh(scale)
+    return scale
+
+
+@router.put("/grading-scales/{scale_id}", response_model=GradingScale)
+def update_grading_scale(
+    scale_id: int,
+    scale_data: GradingScale,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    scale = session.get(GradingScale, scale_id)
+    if not scale:
+        raise HTTPException(status_code=404, detail="Grading scale not found")
+    scale.grade_letter = scale_data.grade_letter
+    scale.min_percentage = scale_data.min_percentage
+    scale.gpa_point = scale_data.gpa_point
+    session.add(scale)
+    session.commit()
+    session.refresh(scale)
+    return scale
+
+
+@router.delete("/grading-scales/{scale_id}")
+def delete_grading_scale(
+    scale_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    scale = session.get(GradingScale, scale_id)
+    if not scale:
+        raise HTTPException(status_code=404, detail="Grading scale not found")
+    session.delete(scale)
+    session.commit()
+    return {"message": "Grading scale deleted"}
+
+
+# --- Attendance Policy ---
+
+@router.get("/attendance-policy", response_model=AttendancePolicy)
+def get_attendance_policy(
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    """Get the active attendance policy (created with defaults if missing)."""
+    policy = session.exec(select(AttendancePolicy).where(AttendancePolicy.is_active == True)).first()
+    if not policy:
+        policy = AttendancePolicy()
+        session.add(policy)
+        session.commit()
+        session.refresh(policy)
+    return policy
+
+
+@router.put("/attendance-policy", response_model=AttendancePolicy)
+def update_attendance_policy(
+    policy_data: AttendancePolicy,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    """Update minimum attendance percentage and late tolerance."""
+    policy = session.exec(select(AttendancePolicy).where(AttendancePolicy.is_active == True)).first()
+    if not policy:
+        policy = AttendancePolicy()
+    policy.min_percentage = policy_data.min_percentage
+    policy.late_tolerance_minutes = policy_data.late_tolerance_minutes
+    policy.is_active = True
+    session.add(policy)
+    session.commit()
+    session.refresh(policy)
+    return policy
+
+
+# --- Course Archive ---
+
+@router.patch("/courses/{course_id}/archive")
+def toggle_course_archive(
+    course_id: int,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_current_admin),
+):
+    """Archive/unarchive a course. Archived courses are hidden from the catalog."""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    course.is_archived = not course.is_archived
+    session.add(course)
+    log = AuditLog(
+        action="ARCHIVE_COURSE" if course.is_archived else "UNARCHIVE_COURSE",
+        performed_by=admin.id,
+        target_id=course_id,
+        details=f"{'Archived' if course.is_archived else 'Unarchived'} course {course.code}",
+    )
+    session.add(log)
+    session.commit()
+    session.refresh(course)
+    return course

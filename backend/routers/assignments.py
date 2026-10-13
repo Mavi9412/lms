@@ -2,9 +2,10 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlmodel import Session, select
 from database import get_session
-from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow, ensure_aware
+from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow, ensure_aware, NotificationType
 from auth import get_current_user
-from permissions import require_course_access, require_enrollment
+from permissions import require_course_access, require_enrollment, enrolled_student_ids
+from routers.notifications import create_notification
 from datetime import datetime
 
 router = APIRouter(
@@ -29,6 +30,16 @@ def create_assignment(
     db_assignment = Assignment.model_validate(assignment)
     session.add(db_assignment)
     session.commit()
+    session.refresh(db_assignment)
+
+    # Notify enrolled students
+    for sid in enrolled_student_ids(session, db_assignment.course_id):
+        create_notification(
+            session, sid, NotificationType.assignment_created,
+            f"New assignment: {db_assignment.title}",
+            f"'{db_assignment.title}' was posted in {course.title}. Due {db_assignment.due_date.strftime('%b %d') if db_assignment.due_date else 'soon'}.",
+            link=f"/courses/{db_assignment.course_id}",
+        )
     session.refresh(db_assignment)
     return db_assignment
 
@@ -180,6 +191,14 @@ def grade_submission(
     session.add(submission)
     session.commit()
     session.refresh(submission)
+
+    create_notification(
+        session, submission.student_id, NotificationType.assignment_graded,
+        f"Graded: {assignment.title}",
+        f"You scored {grade_data.grade}/{assignment.max_points} on '{assignment.title}'.",
+        link=f"/courses/{assignment.course_id}",
+    )
+    session.refresh(submission)
     return submission
 
 
@@ -208,3 +227,31 @@ def get_my_submission_for_assignment(
         raise HTTPException(status_code=404, detail="No submission found")
     
     return submission
+
+
+@router.delete("/{assignment_id}/submissions/{submission_id}/reset")
+def reset_submission(
+    assignment_id: int,
+    submission_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Teacher deletes a submission so the student can retake/resubmit."""
+    submission = session.get(Submission, submission_id)
+    if not submission or submission.assignment_id != assignment_id:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    require_course_access(session, current_user, assignment.course_id, "manage submissions for this course")
+
+    # Remove uploaded file if present
+    import os
+    if submission.file_path and os.path.exists(submission.file_path):
+        try:
+            os.remove(submission.file_path)
+        except OSError:
+            pass
+    session.delete(submission)
+    session.commit()
+    return {"ok": True, "message": "Submission reset — student may resubmit"}

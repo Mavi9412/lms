@@ -5,10 +5,11 @@ from database import get_session
 from models import (
     User, Role, Course, Quiz, Question, QuizAttempt, Answer,
     QuizCreate, QuestionCreate, QuizSubmission, QuestionType,
-    utcnow, ensure_aware
+    NotificationType, utcnow, ensure_aware
 )
 from auth import get_current_user
-from permissions import require_course_access, require_enrollment
+from permissions import require_course_access, require_enrollment, enrolled_student_ids
+from routers.notifications import create_notification
 from datetime import datetime
 import json
 
@@ -60,7 +61,16 @@ def create_quiz(
     
     session.commit()
     session.refresh(quiz)
-    
+
+    for sid in enrolled_student_ids(session, quiz.course_id):
+        create_notification(
+            session, sid, NotificationType.quiz_created,
+            f"New quiz: {quiz.title}",
+            f"'{quiz.title}' is now available.",
+            link=f"/courses/{quiz.course_id}",
+        )
+
+    session.refresh(quiz)
     return quiz
 
 
@@ -249,15 +259,22 @@ def submit_quiz(
         is_correct = False
         points_earned = 0.0
         
-        if question.question_type == QuestionType.true_false:
-            is_correct = answer_text.lower() == question.correct_answer.lower()
-        elif question.question_type == QuestionType.mcq:
-            is_correct = answer_text == question.correct_answer
-        
-        if is_correct:
-            points_earned = question.points
-            total_score += points_earned
-        
+        if question.question_type == QuestionType.short_answer:
+            # Manual grading: stored ungraded; teacher grades later
+            is_correct = None
+            points_earned = None
+            attempt.needs_grading = True
+        else:
+            if question.question_type == QuestionType.true_false:
+                is_correct = (question.correct_answer is not None
+                              and answer_text.lower() == question.correct_answer.lower())
+            elif question.question_type == QuestionType.mcq:
+                is_correct = answer_text == question.correct_answer
+
+            if is_correct:
+                points_earned = question.points
+                total_score += points_earned
+
         # Save answer
         answer = Answer(
             attempt_id=attempt_id,
@@ -277,12 +294,21 @@ def submit_quiz(
     session.add(attempt)
     session.commit()
     session.refresh(attempt)
-    
+
+    create_notification(
+        session, current_user.id, NotificationType.quiz_graded,
+        f"Quiz submitted: {quiz.title}",
+        f"You scored {attempt.score}/{attempt.max_score} on '{quiz.title}'."
+        + (" Some answers need manual grading." if attempt.needs_grading else ""),
+        link=f"/courses/{quiz.course_id}",
+    )
+
     return {
         "attempt_id": attempt.id,
         "score": attempt.score,
         "max_score": attempt.max_score,
         "percentage": attempt.percentage,
+        "needs_grading": attempt.needs_grading,
         "passed": attempt.percentage >= quiz.passing_score if quiz.passing_score else None
     }
 
@@ -362,4 +388,107 @@ def get_attempt_results(
     return {
         "attempt": attempt,
         "results": results
+    }
+
+
+# --- Manual grading for short-answer questions ---
+
+@router.get("/{quiz_id}/needs-grading")
+def attempts_needing_grading(
+    quiz_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Attempts with short answers awaiting manual grading (course teacher/admin)."""
+    quiz = session.get(Quiz, quiz_id)
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    require_course_access(session, current_user, quiz.course_id, "grade quizzes for this course")
+    attempts = session.exec(
+        select(QuizAttempt).where(
+            QuizAttempt.quiz_id == quiz_id,
+            QuizAttempt.needs_grading == True,  # noqa: E711
+        )
+    ).all()
+    result = []
+    for attempt in attempts:
+        student = session.get(User, attempt.student_id)
+        answers = session.exec(
+            select(Answer).where(
+                Answer.attempt_id == attempt.id,
+                Answer.points_earned == None,  # noqa: E711
+            )
+        ).all()
+        result.append({
+            "attempt_id": attempt.id,
+            "student_id": attempt.student_id,
+            "student_name": student.full_name if student else "Unknown",
+            "submitted_at": attempt.submitted_at.isoformat() if attempt.submitted_at else None,
+            "ungraded_answers": [
+                {
+                    "answer_id": a.id,
+                    "question_id": a.question_id,
+                    "question_text": (session.get(Question, a.question_id).question_text
+                                      if session.get(Question, a.question_id) else ""),
+                    "answer_text": a.answer_text,
+                    "max_points": (session.get(Question, a.question_id).points
+                                   if session.get(Question, a.question_id) else 0),
+                }
+                for a in answers
+            ],
+        })
+    return result
+
+
+@router.post("/attempts/{attempt_id}/grade-answer")
+def grade_short_answer(
+    attempt_id: int,
+    grade_data: dict,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Manually grade one short-answer response. Body: {question_id, points_earned}."""
+    attempt = session.get(QuizAttempt, attempt_id)
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Attempt not found")
+    quiz = session.get(Quiz, attempt.quiz_id)
+    require_course_access(session, current_user, quiz.course_id if quiz else 0, "grade quizzes for this course")
+
+    question_id = grade_data.get("question_id")
+    points = grade_data.get("points_earned")
+    answer = session.exec(
+        select(Answer).where(Answer.attempt_id == attempt_id, Answer.question_id == question_id)
+    ).first()
+    if not answer:
+        raise HTTPException(status_code=404, detail="Answer not found")
+    question = session.get(Question, question_id)
+    max_pts = question.points if question else 0
+    if points is None or points < 0 or points > max_pts:
+        raise HTTPException(status_code=400, detail=f"Points must be between 0 and {max_pts}")
+
+    answer.points_earned = float(points)
+    answer.is_correct = float(points) >= max_pts
+    session.add(answer)
+
+    # Recompute attempt totals from all graded answers
+    answers = session.exec(select(Answer).where(Answer.attempt_id == attempt_id)).all()
+    attempt.score = sum(a.points_earned or 0 for a in answers)
+    attempt.percentage = (attempt.score / attempt.max_score * 100) if attempt.max_score else 0
+    attempt.needs_grading = any(a.points_earned is None for a in answers)
+    session.add(attempt)
+    session.commit()
+    session.refresh(attempt)
+
+    create_notification(
+        session, attempt.student_id, NotificationType.quiz_graded,
+        f"Quiz graded: {quiz.title if quiz else ''}",
+        f"Your quiz has been fully graded: {attempt.score}/{attempt.max_score}.",
+        link=f"/courses/{quiz.course_id if quiz else ''}",
+    )
+    return {
+        "attempt_id": attempt.id,
+        "score": attempt.score,
+        "max_score": attempt.max_score,
+        "percentage": attempt.percentage,
+        "needs_grading": attempt.needs_grading,
     }
