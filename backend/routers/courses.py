@@ -1,9 +1,9 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from pydantic import BaseModel
 from database import get_session
-from models import LessonProgress, Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow
+from models import LessonProgress, Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow, CourseModule
 from datetime import datetime
 from auth import get_current_user
 from permissions import require_course_access, require_enrollment
@@ -433,3 +433,168 @@ def student_course_progress(
         "total_lessons": total,
         "percentage": round(len(done_ids) / total * 100, 1) if total else 0,
     }
+
+
+# --- Course Modules ---
+
+class ModuleCreate(SQLModel):
+    title: str
+    description: Optional[str] = None
+    order: int = 0
+
+
+class ModuleUpdate(SQLModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    order: Optional[int] = None
+
+
+def _can_view_course(session: Session, user: User, course_id: int) -> bool:
+    if user.role == Role.admin:
+        return True
+    if user.role == Role.teacher:
+        return session.exec(
+            select(Section).where(
+                Section.course_id == course_id, Section.teacher_id == user.id
+            )
+        ).first() is not None
+    return session.exec(
+        select(Enrollment).join(Section).where(
+            Enrollment.student_id == user.id, Section.course_id == course_id
+        )
+    ).first() is not None
+
+
+def _module_payload(session: Session, module: "CourseModule") -> dict:
+    lessons = session.exec(
+        select(Lesson).where(Lesson.module_id == module.id).order_by(Lesson.order)
+    ).all()
+    return {
+        "id": module.id,
+        "course_id": module.course_id,
+        "title": module.title,
+        "description": module.description,
+        "order": module.order,
+        "lessons": [
+            {"id": l.id, "title": l.title, "content": l.content, "order": l.order,
+             "course_id": l.course_id, "module_id": l.module_id}
+            for l in lessons
+        ],
+    }
+
+
+@router.post("/{course_id}/modules")
+def create_module(
+    course_id: int,
+    data: ModuleCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Create a module (chapter) in a course. Teacher of the course / admin."""
+    require_course_access(session, current_user, course_id, "manage modules for this course")
+    module = CourseModule(course_id=course_id, title=data.title,
+                          description=data.description, order=data.order)
+    session.add(module)
+    session.commit()
+    session.refresh(module)
+    return _module_payload(session, module)
+
+
+@router.get("/{course_id}/modules")
+def list_modules(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Modules with nested lessons + unassigned lessons. Enrolled students, teachers, admin."""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if not _can_view_course(session, current_user, course_id):
+        raise HTTPException(status_code=403, detail="Not enrolled in this course")
+    modules = session.exec(
+        select(CourseModule).where(CourseModule.course_id == course_id).order_by(CourseModule.order)
+    ).all()
+    unassigned = session.exec(
+        select(Lesson).where(Lesson.course_id == course_id, Lesson.module_id == None).order_by(Lesson.order)  # noqa: E711
+    ).all()
+    return {
+        "modules": [_module_payload(session, m) for m in modules],
+        "unassigned_lessons": [
+            {"id": l.id, "title": l.title, "content": l.content, "order": l.order,
+             "course_id": l.course_id, "module_id": l.module_id}
+            for l in unassigned
+        ],
+    }
+
+
+@router.put("/{course_id}/modules/{module_id}")
+def update_module(
+    course_id: int,
+    module_id: int,
+    data: ModuleUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    require_course_access(session, current_user, course_id, "manage modules for this course")
+    module = session.get(CourseModule, module_id)
+    if not module or module.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Module not found")
+    if data.title is not None:
+        module.title = data.title
+    if data.description is not None:
+        module.description = data.description
+    if data.order is not None:
+        module.order = data.order
+    session.add(module)
+    session.commit()
+    session.refresh(module)
+    return _module_payload(session, module)
+
+
+@router.delete("/{course_id}/modules/{module_id}")
+def delete_module(
+    course_id: int,
+    module_id: int,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Delete a module. Its lessons are kept, moved back to unassigned."""
+    require_course_access(session, current_user, course_id, "manage modules for this course")
+    module = session.get(CourseModule, module_id)
+    if not module or module.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Module not found")
+    lessons = session.exec(select(Lesson).where(Lesson.module_id == module_id)).all()
+    for lesson in lessons:
+        lesson.module_id = None
+        session.add(lesson)
+    session.delete(module)
+    session.commit()
+    return {"ok": True, "unassigned_lessons": len(lessons)}
+
+
+@router.patch("/{course_id}/lessons/{lesson_id}/move")
+def move_lesson(
+    course_id: int,
+    lesson_id: int,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    """Move a lesson into/out of a module. Body: {module_id (or null), order?}."""
+    require_course_access(session, current_user, course_id, "manage modules for this course")
+    lesson = session.get(Lesson, lesson_id)
+    if not lesson or lesson.course_id != course_id:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    module_id = data.get("module_id")
+    if module_id is not None:
+        module = session.get(CourseModule, module_id)
+        if not module or module.course_id != course_id:
+            raise HTTPException(status_code=404, detail="Module not found")
+    lesson.module_id = module_id
+    if data.get("order") is not None:
+        lesson.order = data["order"]
+    session.add(lesson)
+    session.commit()
+    session.refresh(lesson)
+    return {"ok": True, "lesson_id": lesson.id, "module_id": lesson.module_id}

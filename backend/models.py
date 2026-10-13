@@ -117,9 +117,20 @@ class Lesson(SQLModel, table=True):
     content: str
     order: int = 0
     course_id: int = Field(foreign_key="course.id")
+    module_id: Optional[int] = Field(default=None, foreign_key="coursemodule.id")
     created_at: datetime = Field(default_factory=utcnow)
 
     course: Course = Relationship(back_populates="lessons")
+
+
+class CourseModule(SQLModel, table=True):
+    """A chapter/unit grouping lessons within a course."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    course_id: int = Field(foreign_key="course.id", ondelete="CASCADE")
+    title: str
+    description: Optional[str] = None
+    order: int = Field(default=0)
+    created_at: datetime = Field(default_factory=utcnow)
 
 
 class LessonProgress(SQLModel, table=True):

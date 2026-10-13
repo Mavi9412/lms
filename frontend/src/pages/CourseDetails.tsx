@@ -114,6 +114,13 @@ const CourseDetails = () => {
     // Lesson progress (students)
     const [progress, setProgress] = useState<{ completed_lesson_ids: number[]; total_lessons: number; percentage: number } | null>(null);
 
+    // Modules
+    const [modulesData, setModulesData] = useState<{ modules: any[]; unassigned_lessons: any[] } | null>(null);
+    const [showModuleModal, setShowModuleModal] = useState(false);
+    const [editingModule, setEditingModule] = useState<any>(null);
+    const [moduleTitle, setModuleTitle] = useState('');
+    const [moduleDesc, setModuleDesc] = useState('');
+
     // Rubrics (read-only for students)
     const [rubrics, setRubrics] = useState<any[]>([]);
     const [expandedRubric, setExpandedRubric] = useState<number | null>(null);
@@ -128,7 +135,65 @@ const CourseDetails = () => {
         fetchThreads();
         fetchRubrics();
         fetchProgress();
+        fetchModules();
     }, [id]);
+
+    const fetchModules = async () => {
+        try {
+            const response = await api.get(`/courses/${id}/modules`);
+            setModulesData(response.data);
+        } catch {
+            setModulesData(null);
+        }
+    };
+
+    const handleSaveModule = async () => {
+        if (!moduleTitle.trim()) return;
+        try {
+            if (editingModule) {
+                await api.put(`/courses/${id}/modules/${editingModule.id}`, {
+                    title: moduleTitle.trim(),
+                    description: moduleDesc.trim() || null,
+                });
+            } else {
+                await api.post(`/courses/${id}/modules`, {
+                    title: moduleTitle.trim(),
+                    description: moduleDesc.trim() || null,
+                    order: (modulesData?.modules.length || 0),
+                });
+            }
+            setShowModuleModal(false);
+            setEditingModule(null);
+            setModuleTitle('');
+            setModuleDesc('');
+            fetchModules();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to save module');
+        }
+    };
+
+    const handleDeleteModule = async (moduleId: number) => {
+        if (!confirm('Delete this module? Its lessons will be kept as unassigned.')) return;
+        try {
+            await api.delete(`/courses/${id}/modules/${moduleId}`);
+            fetchModules();
+            fetchCourseDetails();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to delete module');
+        }
+    };
+
+    const handleMoveLesson = async (lessonId: number, moduleId: string) => {
+        try {
+            await api.patch(`/courses/${id}/lessons/${lessonId}/move`, {
+                module_id: moduleId === '' ? null : Number(moduleId),
+            });
+            fetchModules();
+            fetchCourseDetails();
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to move lesson');
+        }
+    };
 
     const fetchProgress = async () => {
         try {
@@ -323,6 +388,79 @@ const CourseDetails = () => {
     const isOwner = user?.role === 'admin' || (user?.role === 'teacher' && course.teacher_id === user.id);
     const isStudent = user?.role === 'student';
 
+    const renderLessonCard = (lesson: any, index: number) => (
+        <div key={lesson.id} id={`lesson-${lesson.id}`} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-5">
+            <div onClick={() => toggleLesson(lesson.id)} className="flex items-center justify-between cursor-pointer">
+                <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{index + 1}</div>
+                    <h3 className="font-semibold text-lg">{lesson.title}</h3>
+                </div>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {isStudent && progress && (
+                        <button
+                            onClick={() => toggleLessonComplete(lesson.id, progress.completed_lesson_ids.includes(lesson.id))}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${progress.completed_lesson_ids.includes(lesson.id)
+                                ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
+                                : 'bg-white/5 text-text-secondary hover:bg-white/10 hover:text-white'}`}
+                            title={progress.completed_lesson_ids.includes(lesson.id) ? 'Mark as incomplete' : 'Mark as complete'}
+                        >
+                            <CheckCircle className="w-4 h-4" />
+                            {progress.completed_lesson_ids.includes(lesson.id) ? 'Done' : 'Mark done'}
+                        </button>
+                    )}
+                    {isOwner && modulesData && modulesData.modules.length > 0 && (
+                        <select
+                            value={lesson.module_id || ''}
+                            onChange={(e) => handleMoveLesson(lesson.id, e.target.value)}
+                            className="bg-white/5 border border-white/10 rounded-lg text-xs px-2 py-1.5 text-text-secondary focus:outline-none"
+                            title="Move to module"
+                        >
+                            <option value="">Unassigned</option>
+                            {modulesData.modules.map((m: any) => (
+                                <option key={m.id} value={m.id}>{m.title}</option>
+                            ))}
+                        </select>
+                    )}
+                    {isOwner && (
+                        <>
+                            <button
+                                onClick={() => {
+                                    setEditingLesson(lesson);
+                                    setIsEditModalOpen(true);
+                                }}
+                                className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                title="Edit lesson"
+                            >
+                                <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => handleDeleteLesson(lesson.id)}
+                                className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                title="Delete lesson"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </>
+                    )}
+                    {expandedLessons.has(lesson.id) ? <ChevronUp /> : <ChevronDown />}
+                </div>
+            </div>
+            {expandedLessons.has(lesson.id) && (
+                <div className="mt-4 p-4 bg-bg-primary/50 rounded-lg text-text-secondary">
+                    {lesson.content}
+                </div>
+            )}
+        </div>
+    );
+
+    const moduleProgress = (module: any) => {
+        if (!progress || !isStudent) return null;
+        const done = new Set(progress.completed_lesson_ids);
+        const total = module.lessons.length;
+        const n = module.lessons.filter((l: any) => done.has(l.id)).length;
+        return { n, total, pct: total ? Math.round(n / total * 100) : 0 };
+    };
+
     return (
         <div className="max-w-7xl mx-auto px-6 py-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Edit Lesson Modal */}
@@ -336,6 +474,36 @@ const CourseDetails = () => {
                 courseId={id}
                 onLessonUpdated={fetchCourseDetails}
             />
+
+            {/* Module Modal */}
+            {showModuleModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowModuleModal(false)}>
+                    <div className="glass rounded-2xl border border-white/10 w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-xl font-bold mb-4">{editingModule ? 'Edit Module' : 'Add Module'}</h2>
+                        <label className="text-sm text-text-secondary block mb-1">Title</label>
+                        <input
+                            value={moduleTitle}
+                            onChange={(e) => setModuleTitle(e.target.value)}
+                            placeholder="e.g. Week 1: Basics"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:border-primary"
+                        />
+                        <label className="text-sm text-text-secondary block mb-1">Description (optional)</label>
+                        <textarea
+                            value={moduleDesc}
+                            onChange={(e) => setModuleDesc(e.target.value)}
+                            rows={3}
+                            placeholder="What does this module cover?"
+                            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:border-primary"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setShowModuleModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm">Cancel</button>
+                            <button onClick={handleSaveModule} disabled={!moduleTitle.trim()} className="btn btn-primary px-4 text-sm disabled:opacity-50">
+                                {editingModule ? 'Save' : 'Add Module'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Create Lesson Modal */}
             {isCreateLessonModalOpen && (
@@ -565,15 +733,26 @@ const CourseDetails = () => {
                                 <BookOpen className="w-7 h-7 text-primary" />
                                 Course Lessons
                             </h2>
-                            {isOwner && (
-                                <button
-                                    onClick={() => setIsCreateLessonModalOpen(true)}
-                                    className="btn btn-primary flex items-center gap-2 text-sm"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Add Lesson
-                                </button>
-                            )}
+                            <div className="flex gap-2">
+                                {isOwner && (
+                                    <>
+                                        <button
+                                            onClick={() => { setEditingModule(null); setModuleTitle(''); setModuleDesc(''); setShowModuleModal(true); }}
+                                            className="btn bg-white/5 hover:bg-white/10 text-white border border-white/10 flex items-center gap-2 text-sm"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add Module
+                                        </button>
+                                        <button
+                                            onClick={() => setIsCreateLessonModalOpen(true)}
+                                            className="btn btn-primary flex items-center gap-2 text-sm"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Add Lesson
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                         {isStudent && progress && progress.total_lessons > 0 && (
                             <div className="mb-6 p-4 bg-bg-secondary/30 border border-white/5 rounded-xl">
@@ -599,65 +778,82 @@ const CourseDetails = () => {
                                 )}
                             </div>
                         )}
-                        {course.lessons.length === 0 ? (
-                            <div className="text-center py-12 text-text-secondary">
-                                <p>No lessons available yet.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {course.lessons.map((lesson, index) => (
-                                    <div key={lesson.id} id={`lesson-${lesson.id}`} className="bg-bg-secondary/30 border border-white/5 rounded-xl p-5">
-                                        <div onClick={() => toggleLesson(lesson.id)} className="flex items-center justify-between cursor-pointer">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{index + 1}</div>
-                                                <h3 className="font-semibold text-lg">{lesson.title}</h3>
-                                            </div>
-                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                                {isStudent && progress && (
-                                                    <button
-                                                        onClick={() => toggleLessonComplete(lesson.id, progress.completed_lesson_ids.includes(lesson.id))}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${progress.completed_lesson_ids.includes(lesson.id)
-                                                            ? 'bg-green-500/15 text-green-400 hover:bg-green-500/25'
-                                                            : 'bg-white/5 text-text-secondary hover:bg-white/10 hover:text-white'}`}
-                                                        title={progress.completed_lesson_ids.includes(lesson.id) ? 'Mark as incomplete' : 'Mark as complete'}
-                                                    >
-                                                        <CheckCircle className="w-4 h-4" />
-                                                        {progress.completed_lesson_ids.includes(lesson.id) ? 'Done' : 'Mark done'}
-                                                    </button>
-                                                )}
+                        {(() => {
+                            const hasModules = modulesData && modulesData.modules.length > 0;
+                            if (!hasModules) {
+                                if (course.lessons.length === 0) {
+                                    return (
+                                        <div className="text-center py-12 text-text-secondary">
+                                            <p>No lessons available yet.</p>
+                                        </div>
+                                    );
+                                }
+                                return (
+                                    <div className="space-y-4">
+                                        {course.lessons.map((lesson: any, index: number) => renderLessonCard(lesson, index))}
+                                    </div>
+                                );
+                            }
+                            const mp = (m: any) => moduleProgress(m);
+                            return (
+                                <div className="space-y-6">
+                                    {modulesData.modules.map((m: any) => (
+                                        <div key={m.id} className="border border-white/10 rounded-2xl overflow-hidden">
+                                            <div className="bg-white/5 px-5 py-4 flex items-center justify-between">
+                                                <div>
+                                                    <h3 className="font-bold text-lg">{m.title}</h3>
+                                                    {m.description && <p className="text-sm text-text-secondary">{m.description}</p>}
+                                                    <p className="text-xs text-text-secondary mt-1">
+                                                        {m.lessons.length} lesson{m.lessons.length === 1 ? '' : 's'}
+                                                        {mp(m) && <> • {mp(m)!.n}/{mp(m)!.total} complete</>}
+                                                    </p>
+                                                </div>
                                                 {isOwner && (
-                                                    <>
+                                                    <div className="flex gap-1">
                                                         <button
-                                                            onClick={() => {
-                                                                setEditingLesson(lesson);
-                                                                setIsEditModalOpen(true);
-                                                            }}
-                                                            className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                                                            title="Edit lesson"
+                                                            onClick={() => { setEditingModule(m); setModuleTitle(m.title); setModuleDesc(m.description || ''); setShowModuleModal(true); }}
+                                                            className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg"
+                                                            title="Edit module"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDeleteLesson(lesson.id)}
-                                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                                            title="Delete lesson"
+                                                            onClick={() => handleDeleteModule(m.id)}
+                                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg"
+                                                            title="Delete module"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
-                                                    </>
+                                                    </div>
                                                 )}
-                                                {expandedLessons.has(lesson.id) ? <ChevronUp /> : <ChevronDown />}
+                                            </div>
+                                            <div className="p-4 space-y-3">
+                                                {m.lessons.length === 0 ? (
+                                                    <p className="text-sm text-text-secondary px-1">No lessons in this module yet.</p>
+                                                ) : (
+                                                    m.lessons.map((lesson: any, i: number) => renderLessonCard(lesson, i))
+                                                )}
+                                            </div>
+                                            {mp(m) && mp(m)!.total > 0 && (
+                                                <div className="px-5 pb-4">
+                                                    <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-primary rounded-full" style={{ width: `${mp(m)!.pct}%` }} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {modulesData.unassigned_lessons.length > 0 && (
+                                        <div>
+                                            <h3 className="font-semibold text-text-secondary mb-3 text-sm uppercase tracking-wide">Unassigned lessons</h3>
+                                            <div className="space-y-4">
+                                                {modulesData.unassigned_lessons.map((lesson: any, i: number) => renderLessonCard(lesson, i))}
                                             </div>
                                         </div>
-                                        {expandedLessons.has(lesson.id) && (
-                                            <div className="mt-4 p-4 bg-bg-primary/50 rounded-lg text-text-secondary">
-                                                {lesson.content}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
 
