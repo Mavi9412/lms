@@ -12,7 +12,7 @@ workflows for admins, teachers, and students.
 - **Quizzes** — MCQ & true/false, time limits, attempt limits, availability windows, auto-scoring
 - **Rubrics** — teachers define grading criteria per course; shown as a reference while grading and read-only to students
 - **Attendance** — per-section marking, records, per-student summaries, reports, attendance policy
-- **Gradebook** — per-course grade matrix, CSV export, one-click **publish of final letter grades** (uses the admin grading scale)
+- **Gradebook** — per-course grade matrix (assignments + quiz best-attempts), CSV export, one-click **publish of final letter grades** (uses the admin grading scale)
 - **Communication** — course announcements (pinnable) and discussion forums with replies & upvotes
 - **Notifications** — typed in-app notifications with unread counts
 - **Admin** — user management, stats, academic structure, teacher allocation, attendance/grading policies, audit log

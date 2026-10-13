@@ -13,11 +13,17 @@ interface Assignment {
     max_points: number;
 }
 
+interface Quiz {
+    id: number;
+    title: string;
+    max_points: number;
+}
+
 interface StudentGrade {
     student_id: number;
     student_name: string;
     student_email: string;
-    grades: { [key: number]: number | null };
+    grades: { [key: string]: number | null };
     total_points: number;
     max_points: number;
     percentage: number;
@@ -27,6 +33,7 @@ interface GradebookData {
     course_id: number;
     course_title: string;
     assignments: Assignment[];
+    quizzes: Quiz[];
     students: StudentGrade[];
 }
 
@@ -72,15 +79,27 @@ export default function Gradebook() {
         }
     };
 
-    const exportToCSV = () => {        if (!gradebook) return;
+    const exportToCSV = () => {
+        if (!gradebook) return;
 
-        const headers = ['Student Name', 'Email', ...gradebook.assignments.map(a => a.title), 'Total', 'Percentage'];
+        const headers = [
+            'Student Name',
+            'Email',
+            ...gradebook.assignments.map(a => a.title),
+            ...gradebook.quizzes.map(q => `${q.title} (Quiz)`),
+            'Total',
+            'Percentage',
+        ];
         const rows = gradebook.students.map(student => [
             student.student_name,
             student.student_email,
             ...gradebook.assignments.map(a => {
                 const grade = student.grades[a.id];
-                return grade !== null ? grade.toString() : '-';
+                return grade !== null && grade !== undefined ? grade.toString() : '-';
+            }),
+            ...gradebook.quizzes.map(q => {
+                const grade = student.grades[`quiz_${q.id}`];
+                return grade !== null && grade !== undefined ? grade.toString() : '-';
             }),
             student.total_points.toString(),
             `${student.percentage.toFixed(2)}%`
@@ -172,6 +191,18 @@ export default function Gradebook() {
                                         <div className="text-gray-500 font-normal">({assignment.max_points} pts)</div>
                                     </th>
                                 ))}
+                                {gradebook.quizzes.map(quiz => (
+                                    <th
+                                        key={`quiz_${quiz.id}`}
+                                        className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider"
+                                    >
+                                        <div>{quiz.title}</div>
+                                        <div className="font-normal">
+                                            <span className="text-gray-500">({quiz.max_points} pts)</span>{' '}
+                                            <span className="text-purple-400">Quiz</span>
+                                        </div>
+                                    </th>
+                                ))}
                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-800">
                                     Total
                                 </th>
@@ -193,9 +224,26 @@ export default function Gradebook() {
                                         const grade = student.grades[assignment.id];
                                         return (
                                             <td key={assignment.id} className="px-4 py-4 text-center">
-                                                {grade !== null ? (
+                                                {grade !== null && grade !== undefined ? (
                                                     <span className={`text-sm font-medium ${(grade / assignment.max_points) >= 0.9 ? 'text-green-400' :
                                                             (grade / assignment.max_points) >= 0.7 ? 'text-yellow-400' :
+                                                                'text-red-400'
+                                                        }`}>
+                                                        {grade}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-gray-500">-</span>
+                                                )}
+                                            </td>
+                                        );
+                                    })}
+                                    {gradebook.quizzes.map(quiz => {
+                                        const grade = student.grades[`quiz_${quiz.id}`];
+                                        return (
+                                            <td key={`quiz_${quiz.id}`} className="px-4 py-4 text-center">
+                                                {grade !== null && grade !== undefined ? (
+                                                    <span className={`text-sm font-medium ${(grade / quiz.max_points) >= 0.9 ? 'text-green-400' :
+                                                            (grade / quiz.max_points) >= 0.7 ? 'text-yellow-400' :
                                                                 'text-red-400'
                                                         }`}>
                                                         {grade}
