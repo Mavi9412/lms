@@ -28,9 +28,12 @@ interface DiscussionThread {
     reply_count?: number;
 }
 
+import ThreadDetailModal from '../components/ThreadDetailModal';
+
 const StudentCommunication = () => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [discussions, setDiscussions] = useState<DiscussionThread[]>([]);
+    const [openThreadId, setOpenThreadId] = useState<number | null>(null);
     const [courses, setCourses] = useState<Course[]>([]);
     const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
@@ -197,6 +200,7 @@ const StudentCommunication = () => {
     };
 
     return (
+        <>
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <div className="mb-8">
@@ -412,7 +416,8 @@ const StudentCommunication = () => {
                                 discussions.map((discussion) => (
                                     <div
                                         key={discussion.id}
-                                        className="bg-bg-secondary rounded-xl p-6 border border-white/5 hover:border-primary/30 transition-all duration-300"
+                                        onClick={() => setOpenThreadId(discussion.id)}
+                                        className="bg-bg-secondary rounded-xl p-6 border border-white/5 hover:border-primary/30 transition-all duration-300 cursor-pointer"
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className="p-3 bg-white/5 rounded-lg">
@@ -450,6 +455,8 @@ const StudentCommunication = () => {
                 </>
             )}
         </div>
+            <ThreadDetailModal threadId={openThreadId} onClose={() => setOpenThreadId(null)} />
+        </>
     );
 };
 

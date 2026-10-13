@@ -44,6 +44,18 @@ const GradeSubmissionModal = ({ isOpen, onClose, assignmentId, assignmentTitle }
         }
     };
 
+
+
+    const handleReset = async (submissionId: number) => {
+        if (!confirm('Reset this submission? The student will be able to resubmit.')) return;
+        try {
+            await api.delete(`/assignments/${assignmentId}/submissions/${submissionId}/reset`);
+            setSubmissions(submissions.filter(s => s.id !== submissionId));
+        } catch (error: any) {
+            alert(error.response?.data?.detail || 'Failed to reset submission');
+        }
+    };
+
     const handleGrade = async (submissionId: number) => {
         setSubmitting(true);
         try {
@@ -162,19 +174,28 @@ const GradeSubmissionModal = ({ isOpen, onClose, assignmentId, assignmentTitle }
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <button
-                                                    onClick={() => {
-                                                        setGradingId(submission.id);
-                                                        setGrade(submission.grade || 0);
-                                                        setFeedback(submission.feedback || '');
-                                                    }}
-                                                    className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${submission.grade !== null
-                                                            ? 'bg-white/5 text-text-secondary hover:bg-white/10'
-                                                            : 'btn-primary shadow-lg shadow-primary/20'
-                                                        }`}
-                                                >
-                                                    {submission.grade !== null ? 'Update Grade' : 'Grade Submission'}
-                                                </button>
+                                                <div>
+                                                    <button
+                                                        onClick={() => {
+                                                            setGradingId(submission.id);
+                                                            setGrade(submission.grade || 0);
+                                                            setFeedback(submission.feedback || '');
+                                                        }}
+                                                        className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${submission.grade !== null
+                                                                ? 'bg-white/5 text-text-secondary hover:bg-white/10'
+                                                                : 'btn-primary shadow-lg shadow-primary/20'
+                                                            }`}
+                                                    >
+                                                        {submission.grade !== null ? 'Update Grade' : 'Grade Submission'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReset(submission.id)}
+                                                        className="w-full py-2 px-4 mt-2 rounded-lg text-sm bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/20 transition-all"
+                                                        title="Delete submission so the student can resubmit"
+                                                    >
+                                                        Reset for Retake
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
