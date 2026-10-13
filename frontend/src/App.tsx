@@ -1,5 +1,4 @@
-// import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Landing from './pages/Landing';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -35,12 +34,27 @@ import TeacherAssignments from './pages/teacher/TeacherAssignments';
 import TeacherQuizzes from './pages/teacher/TeacherQuizzes';
 import TeacherMaterials from './pages/teacher/TeacherMaterials';
 import TeacherAnnouncements from './pages/teacher/TeacherAnnouncements';
-import { AuthProvider } from './context/AuthContext';
+import TeacherRubrics from './pages/teacher/TeacherRubrics';
+import TeacherLayout from './layouts/TeacherLayout';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import type { ReactElement } from 'react';
 
-// const PrivateRoute = ({ children }: { children: React.ReactElement }) => {
-//     const { isAuthenticated } = useAuth();
-//     return isAuthenticated ? children : <Navigate to="/login" />;
-// };
+/** Requires a logged-in user; otherwise sends them to /login. */
+const PrivateRoute = ({ children }: { children: ReactElement }) => {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+/** Requires one of the given roles; otherwise sends them to their dashboard. */
+const RoleRoute = ({ roles, children }: { roles: string[]; children: ReactElement }) => {
+    const { isAuthenticated, user } = useAuth();
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (!user || !roles.includes(user.role)) {
+        const fallback = user?.role === 'admin' ? '/admin' : user?.role === 'teacher' ? '/teacher' : '/dashboard';
+        return <Navigate to={fallback} replace />;
+    }
+    return children;
+};
 
 function App() {
   return (
@@ -49,18 +63,6 @@ function App() {
         <div className="app-container">
           <Routes>
             <Route element={<Layout />}>
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="courses" element={<AdminCourses />} />
-                <Route path="batches" element={<AdminBatches />} />
-                <Route path="policies" element={<AdminPolicies />} />
-                <Route path="academic" element={<AcademicStructure />} />
-                <Route path="allocations" element={<AdminAllocations />} />
-                {/* <Route path="policies" element={<AdminPolicies />} /> */}
-              </Route>
-
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -68,29 +70,48 @@ function App() {
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetails />} />
-              <Route path="/my-courses" element={<MyCourses />} />
-              <Route path="/my-assignments" element={<StudentAssignments />} />
-              <Route path="/my-quizzes" element={<StudentQuizzes />} />
-              <Route path="/my-grades" element={<StudentGrades />} />
-              <Route path="/communication" element={<StudentCommunication />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/dashboard" element={<StudentDashboard />} />
-              <Route path="/student/dashboard" element={<StudentDashboard />} />
-              <Route path="/teacher" element={<TeacherDashboard />} />
-              <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-              <Route path="/teacher/sections" element={<TeacherSections />} />
-              <Route path="/teacher/attendance" element={<TeacherAttendance />} />
-              <Route path="/teacher/assignments" element={<TeacherAssignments />} />
-              <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
-              <Route path="/teacher/materials" element={<TeacherMaterials />} />
-              <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
-              <Route path="/take-attendance" element={<Attendance />} />
-              <Route path="/my-attendance" element={<MyAttendance />} />
-              <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
-              <Route path="/quiz-results/:attemptId" element={<QuizResults />} />
-              <Route path="/gradebook/:courseId" element={<Gradebook />} />
-              {/* Example Protected Route */}
-              {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+
+              {/* Everything below requires login */}
+              <Route element={<PrivateRoute><Outlet /></PrivateRoute>}>
+                {/* Admin */}
+                <Route path="/admin" element={<RoleRoute roles={['admin']}><AdminLayout /></RoleRoute>}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="courses" element={<AdminCourses />} />
+                  <Route path="batches" element={<AdminBatches />} />
+                  <Route path="policies" element={<AdminPolicies />} />
+                  <Route path="academic" element={<AcademicStructure />} />
+                  <Route path="allocations" element={<AdminAllocations />} />
+                </Route>
+
+                {/* Student */}
+                <Route path="/my-courses" element={<MyCourses />} />
+                <Route path="/my-assignments" element={<StudentAssignments />} />
+                <Route path="/my-quizzes" element={<StudentQuizzes />} />
+                <Route path="/my-grades" element={<StudentGrades />} />
+                <Route path="/communication" element={<StudentCommunication />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/dashboard" element={<StudentDashboard />} />
+                <Route path="/student/dashboard" element={<StudentDashboard />} />
+                <Route path="/my-attendance" element={<MyAttendance />} />
+                <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
+                <Route path="/quiz-results/:attemptId" element={<QuizResults />} />
+
+                {/* Teacher */}
+                <Route element={<RoleRoute roles={['teacher', 'admin']}><TeacherLayout /></RoleRoute>}>
+                  <Route path="/teacher" element={<TeacherDashboard />} />
+                  <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+                  <Route path="/teacher/sections" element={<TeacherSections />} />
+                  <Route path="/teacher/attendance" element={<TeacherAttendance />} />
+                  <Route path="/teacher/assignments" element={<TeacherAssignments />} />
+                  <Route path="/teacher/quizzes" element={<TeacherQuizzes />} />
+                  <Route path="/teacher/materials" element={<TeacherMaterials />} />
+                  <Route path="/teacher/announcements" element={<TeacherAnnouncements />} />
+                  <Route path="/teacher/rubrics" element={<TeacherRubrics />} />
+                </Route>
+                <Route path="/take-attendance" element={<RoleRoute roles={['teacher', 'admin']}><Attendance /></RoleRoute>} />
+                <Route path="/gradebook/:courseId" element={<RoleRoute roles={['teacher', 'admin']}><Gradebook /></RoleRoute>} />
+              </Route>
             </Route>
           </Routes>
         </div>
