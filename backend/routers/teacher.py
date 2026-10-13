@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, func
 from database import get_session
-from models import User, Role, Section, Enrollment, Assignment, Submission, Course
+from models import User, Role, Section, Enrollment, Assignment, Submission, Course, Semester
 from auth import get_current_user
 from typing import List, Dict, Any
 from datetime import datetime
@@ -24,32 +24,29 @@ def get_teacher_dashboard(
     teacher: User = Depends(get_current_teacher)
 ) -> Dict[str, Any]:
     """
-    Get comprehensive dashboard data for teacher including:
-    - Assigned sections/courses
+    Dashboard data for a teacher:
+    - Assigned sections (with course info + enrollment counts)
     - Total enrolled students
-    - Pending grading tasks
-    - Upcoming classes (placeholder for now)
+    - Pending grading tasks (ungraded submissions in their courses)
     """
-    
-    # Get all sections assigned to this teacher
-    sections_query = select(Section).where(Section.teacher_id == teacher.id)
-    sections = session.exec(sections_query).all()
-    
-    # Build assigned sections data with course info and enrollment counts
+
+    # Sections assigned to this teacher
+    sections = session.exec(
+        select(Section).where(Section.teacher_id == teacher.id)
+    ).all()
+
     assigned_sections = []
     total_students = 0
-    
+    course_ids = set()
     for section in sections:
-        # Get course details
         course = session.get(Course, section.course_id)
-        
-        # Count enrollments in this section
+        if course:
+            course_ids.add(course.id)
         enrollment_count = session.exec(
             select(func.count(Enrollment.id)).where(Enrollment.section_id == section.id)
         ).one()
-        
         total_students += enrollment_count
-        
+        semester = session.get(Semester, section.semester_id)
         assigned_sections.append({
             "id": section.id,
             "name": section.name,
@@ -57,66 +54,55 @@ def get_teacher_dashboard(
                 "id": course.id if course else None,
                 "title": course.title if course else "Unknown",
                 "code": course.code if course else "N/A",
-                "credit_hours": course.credit_hours if course else 0
+                "credit_hours": course.credit_hours if course else 0,
             },
-            "semester": section.semester if section.semester else "Current",
+            "semester": semester.name if semester else "Current",
+            "schedule": section.schedule,
             "enrolled_count": enrollment_count,
-            "capacity": section.capacity
         })
-    
-    # Get pending grading tasks
-    # Find all assignments in teacher's sections
-    section_ids = [s.id for s in sections]
-    
+
+    # Pending grading: ungraded submissions for assignments in teacher's courses
     pending_grading = []
-    if section_ids:
-        # Get assignments for these sections
-        assignments_query = select(Assignment).where(Assignment.section_id.in_(section_ids))
-        assignments = session.exec(assignments_query).all()
-        
+    total_assignments = 0
+    if course_ids:
+        assignments = session.exec(
+            select(Assignment).where(Assignment.course_id.in_(course_ids))
+        ).all()
+        total_assignments = len(assignments)
         for assignment in assignments:
-            # Count ungraded submissions
             ungraded_count = session.exec(
                 select(func.count(Submission.id))
                 .where(Submission.assignment_id == assignment.id)
-                .where(Submission.grade == None)
+                .where(Submission.grade == None)  # noqa: E711
             ).one()
-            
             if ungraded_count > 0:
-                # Get section and course info
-                section = session.get(Section, assignment.section_id)
-                course = session.get(Course, section.course_id) if section else None
-                
+                course = session.get(Course, assignment.course_id)
+                total_submissions = session.exec(
+                    select(func.count(Submission.id))
+                    .where(Submission.assignment_id == assignment.id)
+                ).one()
                 pending_grading.append({
                     "assignment_id": assignment.id,
                     "assignment_title": assignment.title,
-                    "section_id": assignment.section_id,
-                    "section_name": section.name if section else "Unknown",
+                    "course_id": assignment.course_id,
                     "course_code": course.code if course else "N/A",
                     "course_title": course.title if course else "Unknown",
                     "pending_count": ungraded_count,
                     "due_date": assignment.due_date.isoformat() if assignment.due_date else None,
-                    "total_submissions": session.exec(
-                        select(func.count(Submission.id))
-                        .where(Submission.assignment_id == assignment.id)
-                    ).one()
+                    "total_submissions": total_submissions,
                 })
-    
-    # Upcoming classes - placeholder for now (no class schedule model exists yet)
-    upcoming_classes = []
-    # Future: Add class schedule functionality here
-    
+
     return {
         "assigned_sections": assigned_sections,
         "total_students": total_students,
         "pending_grading": pending_grading,
-        "upcoming_classes": upcoming_classes,
         "stats": {
-            "total_courses": len(assigned_sections),
+            "total_courses": len(course_ids),
+            "total_sections": len(assigned_sections),
             "total_students": total_students,
             "pending_tasks": len(pending_grading),
-            "total_assignments": len(assignments) if section_ids else 0
-        }
+            "total_assignments": total_assignments,
+        },
     }
 
 
