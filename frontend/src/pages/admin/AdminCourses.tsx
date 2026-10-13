@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit, Trash2, CheckCircle, Eye, EyeOff, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, CheckCircle, Eye, EyeOff, Search,
+    Archive} from 'lucide-react';
 import api from '../../services/api';
 import CreateCourseModal from '../../components/modals/CreateCourseModal';
 import EditCourseModal from '../../components/modals/EditCourseModal';
@@ -13,6 +14,7 @@ interface Course {
     department_id: number;
     is_approved: boolean;
     is_published: boolean;
+    is_archived: boolean;
 }
 
 interface Department {
@@ -84,6 +86,19 @@ const AdminCourses = () => {
             const response = await api.patch(`/admin/courses/${courseId}/toggle-publish`);
             setCourses(courses.map(c =>
                 c.id === courseId ? { ...c, is_published: response.data.is_published } : c
+            ));
+        } catch (error: any) {
+            alert(error.response?.data?.detail || `Failed to ${action} course`);
+        }
+    };
+
+    const handleToggleArchive = async (courseId: number, currentStatus: boolean) => {
+        const action = currentStatus ? 'unarchive' : 'archive';
+        if (!confirm(`Are you sure you want to ${action} this course? Archived courses are hidden from the catalog.`)) return;
+        try {
+            const response = await api.patch(`/admin/courses/${courseId}/archive`);
+            setCourses(courses.map(c =>
+                c.id === courseId ? { ...c, is_archived: response.data.is_archived } : c
             ));
         } catch (error: any) {
             alert(error.response?.data?.detail || `Failed to ${action} course`);
@@ -197,6 +212,16 @@ const AdminCourses = () => {
                                                 title={course.is_published ? 'Unpublish Course' : 'Publish Course'}
                                             >
                                                 {course.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleArchive(course.id, course.is_archived)}
+                                                className={`p-2 rounded-lg transition-colors ${course.is_archived
+                                                    ? 'text-yellow-400 hover:bg-yellow-500/20'
+                                                    : 'hover:bg-yellow-500/20 text-text-secondary hover:text-yellow-400'
+                                                    }`}
+                                                title={course.is_archived ? 'Unarchive Course' : 'Archive Course'}
+                                            >
+                                                <Archive className="w-4 h-4" />
                                             </button>
                                             <button
                                                 onClick={() => setEditingCourse(course)}

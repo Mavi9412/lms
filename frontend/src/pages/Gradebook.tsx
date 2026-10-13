@@ -27,6 +27,7 @@ interface StudentGrade {
     total_points: number;
     max_points: number;
     percentage: number;
+    attendance_percentage?: number | null;
 }
 
 interface GradebookData {
@@ -71,11 +72,33 @@ export default function Gradebook() {
             const response = await axios.post(`${API_URL}/gradebook/course/${courseId}/publish`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setPublishMsg(`Published final grades for ${response.data.published} students.`);
+            const warnings = response.data.attendance_warnings || [];
+            let msg = `Published final grades for ${response.data.published} students.`;
+            if (warnings.length > 0) {
+                msg += `\nAttendance warnings: ${warnings.map((w: any) => `${w.student_name} (${w.attendance_percentage}%)`).join(', ')}`;
+            }
+            setPublishMsg(msg);
         } catch (err: any) {
             setPublishMsg(err.response?.data?.detail || 'Failed to publish grades');
         } finally {
             setPublishing(false);
+        }
+    };
+
+    const issueCertificate = async (studentId: number, studentName: string) => {
+        if (!confirm(`Issue a completion certificate to ${studentName}? Requires 100% lesson progress.`)) return;
+        try {
+            const response = await axios.post(`${API_URL}/certificates/issue`, {
+                student_id: studentId,
+                course_id: Number(courseId),
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            if (response.data.already_issued) {
+                alert(`Certificate already issued. Code: ${response.data.verification_code}`);
+            } else {
+                alert(`Certificate issued! Verification code: ${response.data.verification_code}`);
+            }
+        } catch (err: any) {
+            alert(err.response?.data?.detail || 'Failed to issue certificate');
         }
     };
 
@@ -209,6 +232,12 @@ export default function Gradebook() {
                                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider bg-gray-800">
                                     Percentage
                                 </th>
+                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                    Attendance
+                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">
+                                    Certificate
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-700">
@@ -267,6 +296,24 @@ export default function Gradebook() {
                                             }`}>
                                             {student.percentage.toFixed(2)}%
                                         </span>
+                                    </td>
+                                    <td className="px-4 py-4 text-center">
+                                        {student.attendance_percentage !== null && student.attendance_percentage !== undefined ? (
+                                            <span className={`text-sm font-medium ${student.attendance_percentage < 75 ? 'text-red-400' : 'text-gray-300'}`}>
+                                                {student.attendance_percentage.toFixed(0)}%
+                                            </span>
+                                        ) : (
+                                            <span className="text-sm text-gray-600">-</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-4 text-center">
+                                        <button
+                                            onClick={() => issueCertificate(student.student_id, student.student_name)}
+                                            className="text-xs px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-lg"
+                                            title="Issue completion certificate (requires 100% lesson progress)"
+                                        >
+                                            Issue
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

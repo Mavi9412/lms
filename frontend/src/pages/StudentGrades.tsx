@@ -30,12 +30,21 @@ interface CourseGrades {
 
 const StudentGrades = () => {
     const [courseGrades, setCourseGrades] = useState<CourseGrades[]>([]);
+    const [certificates, setCertificates] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
 
     useEffect(() => {
         fetchGrades();
+        fetchCertificates();
     }, []);
+
+    const fetchCertificates = async () => {
+        try {
+            const res = await api.get('/certificates/my');
+            setCertificates(res.data);
+        } catch { /* ignore */ }
+    };
 
     const fetchGrades = async () => {
         setLoading(true);
@@ -181,6 +190,37 @@ const StudentGrades = () => {
                 </h1>
                 <p className="text-text-secondary mt-2 text-sm sm:text-base">View your grades and academic performance</p>
             </div>
+
+            {/* Certificates */}
+            {certificates.length > 0 && (
+                <div className="bg-bg-secondary rounded-xl p-6 mb-6 border border-primary/20">
+                    <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                        <Award className="w-6 h-6 text-primary" /> My Certificates
+                    </h2>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        {certificates.map((c) => (
+                            <div key={c.verification_code} className="bg-bg-primary/50 border border-white/5 rounded-xl p-4 flex items-center justify-between">
+                                <div>
+                                    <p className="font-semibold">{c.course_title}</p>
+                                    <p className="text-sm text-text-secondary">
+                                        {c.grade && <>Grade: {c.grade} • </>}
+                                        Issued {new Date(c.issued_at).toLocaleDateString()}
+                                    </p>
+                                    <p className="text-xs font-mono text-text-secondary mt-1">{c.verification_code}</p>
+                                </div>
+                                <a
+                                    href={`/verify/${c.verification_code}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary text-sm hover:underline whitespace-nowrap"
+                                >
+                                    Verify
+                                </a>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Course Filter */}
             <div className="bg-bg-secondary rounded-xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
