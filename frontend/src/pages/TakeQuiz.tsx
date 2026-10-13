@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 interface Question {
     id: number;
-    question_type: 'mcq' | 'true_false';
+    question_type: 'mcq' | 'true_false' | 'short_answer';
     question_text: string;
     points: number;
     order: number;
@@ -192,6 +192,19 @@ export default function TakeQuiz() {
                                         <span className="text-white">{option}</span>
                                     </label>
                                 ))}
+                            </div>
+                        )}
+
+                        {question.question_type === 'short_answer' && (
+                            <div>
+                                <textarea
+                                    value={answers[question.id] || ''}
+                                    onChange={(e) => handleAnswer(question.id, e.target.value)}
+                                    placeholder="Type your answer here..."
+                                    rows={4}
+                                    className="w-full bg-white/5 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:border-teal-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">This answer will be graded manually by your instructor.</p>
                             </div>
                         )}
 

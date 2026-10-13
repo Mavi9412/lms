@@ -24,6 +24,7 @@ import Attendance from './pages/Attendance';
 import MyAttendance from './pages/MyAttendance';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VerifyCertificate from './pages/VerifyCertificate';
 import TakeQuiz from './pages/TakeQuiz';
 import QuizResults from './pages/QuizResults';
 import Gradebook from './pages/Gradebook';
@@ -68,6 +69,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/verify/:code" element={<VerifyCertificate />} />
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetails />} />
 

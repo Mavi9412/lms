@@ -10,7 +10,7 @@ interface CreateQuizModalProps {
 }
 
 interface Question {
-    question_type: 'mcq' | 'true_false';
+    question_type: 'mcq' | 'true_false' | 'short_answer';
     question_text: string;
     points: number;
     order: number;
@@ -30,7 +30,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, onCreated }
 
     if (!isOpen) return null;
 
-    const addQuestion = (type: 'mcq' | 'true_false') => {
+    const addQuestion = (type: 'mcq' | 'true_false' | 'short_answer') => {
         const newQuestion: Question = {
             question_type: type,
             question_text: '',
@@ -192,6 +192,13 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, onCreated }
                                     className="px-3 py-1.5 bg-teal-500 hover:bg-teal-600 text-white text-sm rounded-lg transition-colors"
                                 >
                                     + True/False
+                                <button
+                                    type="button"
+                                    onClick={() => addQuestion('short_answer')}
+                                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm rounded-lg transition-colors"
+                                >
+                                    + Short Answer
+                                </button>
                                 </button>
                             </div>
                         </div>
@@ -204,7 +211,7 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, onCreated }
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className="text-sm font-medium text-teal-400">
-                                                    Q{qIndex + 1} - {question.question_type === 'mcq' ? 'Multiple Choice' : 'True/False'}
+                                                    Q{qIndex + 1} - {question.question_type === 'mcq' ? 'Multiple Choice' : question.question_type === 'true_false' ? 'True/False' : 'Short Answer (manual grading)'}
                                                 </span>
                                                 <input
                                                     type="number"
@@ -274,6 +281,19 @@ export default function CreateQuizModal({ isOpen, onClose, courseId, onCreated }
                                                         />
                                                         <span className="text-sm text-white">False</span>
                                                     </label>
+                                                </div>
+                                            )}
+
+                                            {question.question_type === 'short_answer' && (
+                                                <div>
+                                                    <label className="text-sm text-gray-400 block mb-1">Model answer (optional, for reference)</label>
+                                                    <textarea
+                                                        value={question.correct_answer || ''}
+                                                        onChange={(e) => updateQuestion(qIndex, { correct_answer: e.target.value })}
+                                                        rows={2}
+                                                        placeholder="Expected answer..."
+                                                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm"
+                                                    />
                                                 </div>
                                             )}
                                         </div>
