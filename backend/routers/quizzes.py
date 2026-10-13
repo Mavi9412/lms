@@ -8,6 +8,7 @@ from models import (
     utcnow, ensure_aware
 )
 from auth import get_current_user
+from permissions import require_course_access
 from datetime import datetime
 import json
 
@@ -25,9 +26,8 @@ def create_quiz(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Create a new quiz (Teacher/Admin only)"""
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    """Create a new quiz (course teacher/Admin only)"""
+    require_course_access(session, current_user, quiz_data.course_id, "create quizzes for this course")
     
     # Create quiz
     quiz = Quiz(
@@ -129,13 +129,11 @@ def delete_quiz(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Delete a quiz (Teacher/Admin only)"""
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
+    """Delete a quiz (course teacher/Admin only)"""
     quiz = session.get(Quiz, quiz_id)
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
+    require_course_access(session, current_user, quiz.course_id, "delete quizzes for this course")
     
     session.delete(quiz)
     session.commit()
@@ -285,6 +283,9 @@ def get_quiz_attempts(
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
     
+    if current_user.role in [Role.teacher, Role.admin]:
+        require_course_access(session, current_user, quiz.course_id, "view attempts for this course")
+
     if current_user.role == Role.student:
         # Student sees only their attempts
         attempts = session.exec(

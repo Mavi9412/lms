@@ -6,6 +6,7 @@ from database import get_session
 from models import Course, CourseCreate, User, Role, Enrollment, Section, Lesson, LessonCreate, LessonUpdate, Semester, Department, CourseMaterial, utcnow
 from datetime import datetime
 from auth import get_current_user
+from permissions import require_course_access
 import shutil
 import os
 from fastapi import UploadFile, File
@@ -172,18 +173,8 @@ def create_lesson(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
         
-    # Check permissions (must be teacher of the course or admin)
-    # Simplified: Check if user is the teacher of Section A or Admin
-    is_authorized = False
-    if current_user.role == Role.admin:
-        is_authorized = True
-    else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
-            is_authorized = True
-            
-    if not is_authorized:
-        raise HTTPException(status_code=403, detail="Not authorized to add lessons to this course")
+    # Must teach a section of this course (or be admin)
+    require_course_access(session, current_user, course_id, "add lessons to this course")
 
     db_lesson = Lesson.model_validate(lesson)
     db_lesson.course_id = course_id # Ensure course_id matches URL
@@ -204,17 +195,7 @@ def update_lesson(
     if not lesson or lesson.course_id != course_id:
         raise HTTPException(status_code=404, detail="Lesson not found")
 
-    # Check permissions (same rule as create/delete)
-    is_authorized = False
-    if current_user.role == Role.admin:
-        is_authorized = True
-    else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
-            is_authorized = True
-
-    if not is_authorized:
-        raise HTTPException(status_code=403, detail="Not authorized to edit lessons in this course")
+    require_course_access(session, current_user, course_id, "edit lessons in this course")
 
     update_data = lesson_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -235,17 +216,7 @@ def delete_lesson(
     if not lesson or lesson.course_id != course_id:
         raise HTTPException(status_code=404, detail="Lesson not found")
         
-    # Check permissions
-    is_authorized = False
-    if current_user.role == Role.admin:
-        is_authorized = True
-    else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
-            is_authorized = True
-            
-    if not is_authorized:
-        raise HTTPException(status_code=403, detail="Not authorized to delete lessons from this course")
+    require_course_access(session, current_user, course_id, "delete lessons from this course")
 
     session.delete(lesson)
     session.commit()
@@ -290,18 +261,7 @@ def upload_course_material(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    # Check permissions (Teacher of the course or Admin)
-    is_authorized = False
-    if current_user.role == Role.admin:
-        is_authorized = True
-    else:
-        # Check if user is teacher of any section of this course (simplified to Section A for now as per other endpoints)
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
-            is_authorized = True
-    
-    if not is_authorized:
-        raise HTTPException(status_code=403, detail="Not authorized to upload materials to this course")
+    require_course_access(session, current_user, course_id, "upload materials to this course")
 
     # Save file
     upload_dir = "uploads"
@@ -349,17 +309,7 @@ def delete_course_material(
     if not material or material.course_id != course_id:
         raise HTTPException(status_code=404, detail="Material not found")
         
-    # Check permissions
-    is_authorized = False
-    if current_user.role == Role.admin:
-        is_authorized = True
-    else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
-            is_authorized = True
-            
-    if not is_authorized:
-        raise HTTPException(status_code=403, detail="Not authorized to delete materials from this course")
+    require_course_access(session, current_user, course_id, "delete materials from this course")
 
     # Delete file from disk
     if os.path.exists(material.file_path):

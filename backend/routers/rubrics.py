@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from database import get_session
 from models import User, Role, Rubric, RubricCriterion, RubricCreate, RubricCriterionCreate
 from auth import get_current_user
+from permissions import require_course_access
 
 router = APIRouter(
     prefix="/rubrics",
@@ -17,9 +18,8 @@ def create_rubric(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Create a new rubric (Teacher/Admin only)"""
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    """Create a new rubric (course teacher/Admin only)"""
+    require_course_access(session, current_user, rubric_data.course_id, "create rubrics for this course")
     
     rubric = Rubric(
         title=rubric_data.title,
@@ -93,13 +93,11 @@ def delete_rubric(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Delete a rubric (Teacher/Admin only)"""
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
+    """Delete a rubric (course teacher/Admin only)"""
     rubric = session.get(Rubric, rubric_id)
     if not rubric:
         raise HTTPException(status_code=404, detail="Rubric not found")
+    require_course_access(session, current_user, rubric.course_id, "delete rubrics for this course")
     
     session.delete(rubric)
     session.commit()

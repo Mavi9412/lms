@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from database import get_session
 from models import Assignment, AssignmentCreate, Submission, SubmissionCreate, GradeSubmission, User, Role, Course, utcnow
 from auth import get_current_user
+from permissions import require_course_access
 from datetime import datetime
 
 router = APIRouter(
@@ -19,16 +20,11 @@ def create_assignment(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Only teachers can create assignments")
-    
-    # Verify course ownership
+    # Verify course exists and teacher teaches it
     course = session.get(Course, assignment.course_id)
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-        
-    # In Phase 1 we use teacher_id on Section, but effectively if you are a teacher we might allow creating assignments for minimal friction now
-    # Ideally check if teacher teaches any section of this course.
+    require_course_access(session, current_user, assignment.course_id, "create assignments for this course")
     
     db_assignment = Assignment.model_validate(assignment)
     session.add(db_assignment)
@@ -120,9 +116,11 @@ def get_submissions(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-        
+    assignment = session.get(Assignment, assignment_id)
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    require_course_access(session, current_user, assignment.course_id, "view submissions for this course")
+
     submissions = session.exec(
         select(Submission).where(Submission.assignment_id == assignment_id)
     ).all()
@@ -156,14 +154,14 @@ def grade_submission(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-        
     submission = session.get(Submission, submission_id)
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
     assignment = session.get(Assignment, submission.assignment_id)
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    require_course_access(session, current_user, assignment.course_id, "grade submissions for this course")
     if assignment and grade_data.grade is not None:
         if grade_data.grade < 0 or grade_data.grade > assignment.max_points:
             raise HTTPException(

@@ -4,6 +4,7 @@ from sqlmodel import Session, select
 from database import get_session
 from models import User, Role, Announcement, AnnouncementCreate
 from auth import get_current_user
+from permissions import require_course_access
 
 router = APIRouter(
     prefix="/announcements",
@@ -17,9 +18,8 @@ def create_announcement(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    """Create a new announcement (Teacher/Admin only)"""
-    if current_user.role not in [Role.teacher, Role.admin]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    """Create a new announcement (course teacher/Admin only)"""
+    require_course_access(session, current_user, announcement_data.course_id, "create announcements for this course")
     
     announcement = Announcement(
         **announcement_data.model_dump(),
