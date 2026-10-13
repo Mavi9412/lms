@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Star, Award, ChevronDown } from 'lucide-react';
 import api from '../../services/api';
 
 interface Submission {
@@ -14,18 +14,54 @@ interface Submission {
     feedback: string | null;
 }
 
+interface RubricCriterion {
+    id: number;
+    name: string;
+    description: string | null;
+    max_points: number;
+}
+
+interface Rubric {
+    id: number;
+    title: string;
+    description: string | null;
+}
+
+interface RubricDetail extends Rubric {
+    criteria: RubricCriterion[];
+}
+
 interface Props {
     submission: Submission;
     maxPoints: number;
+    courseId?: number;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-const GradeSubmissionModal = ({ submission, maxPoints, onClose, onSuccess }: Props) => {
+const GradeSubmissionModal = ({ submission, maxPoints, courseId, onClose, onSuccess }: Props) => {
     const [grade, setGrade] = useState(submission.grade?.toString() || '');
     const [feedback, setFeedback] = useState(submission.feedback || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [rubrics, setRubrics] = useState<RubricDetail[]>([]);
+    const [showRubrics, setShowRubrics] = useState(false);
+
+    useEffect(() => {
+        if (courseId) fetchRubrics();
+    }, [courseId]);
+
+    const fetchRubrics = async () => {
+        try {
+            const listRes = await api.get(`/rubrics/course/${courseId}`);
+            const details = await Promise.all(
+                (listRes.data as Rubric[]).map((r) => api.get(`/rubrics/${r.id}`).then((res) => res.data))
+            );
+            setRubrics(details);
+        } catch (err) {
+            console.error('Failed to fetch rubrics:', err);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -122,6 +158,52 @@ const GradeSubmissionModal = ({ submission, maxPoints, onClose, onSuccess }: Pro
                             </div>
                         )}
                     </div>
+
+                    {/* Grading Rubric Reference */}
+                    {rubrics.length > 0 && (
+                        <div className="bg-bg-primary rounded-lg p-4 mb-6 border border-white/5">
+                            <button
+                                type="button"
+                                onClick={() => setShowRubrics(!showRubrics)}
+                                className="flex items-center justify-between w-full text-left"
+                            >
+                                <span className="flex items-center gap-2 text-sm font-medium text-white">
+                                    <Award className="w-4 h-4 text-primary" />
+                                    Grading Rubric{rubrics.length > 1 ? 's' : ''} ({rubrics.length})
+                                </span>
+                                <ChevronDown
+                                    className={`w-4 h-4 text-text-secondary transition-transform ${showRubrics ? 'rotate-180' : ''}`}
+                                />
+                            </button>
+                            {showRubrics && (
+                                <div className="mt-3 space-y-4">
+                                    {rubrics.map((rubric) => (
+                                        <div key={rubric.id}>
+                                            <p className="text-sm font-medium text-primary mb-2">{rubric.title}</p>
+                                            <div className="space-y-1.5">
+                                                {rubric.criteria.map((criterion) => (
+                                                    <div
+                                                        key={criterion.id}
+                                                        className="flex items-center justify-between text-sm bg-bg-secondary rounded-lg px-3 py-2"
+                                                    >
+                                                        <div>
+                                                            <span className="text-white">{criterion.name}</span>
+                                                            {criterion.description && (
+                                                                <span className="text-text-secondary"> — {criterion.description}</span>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-text-secondary whitespace-nowrap ml-3">
+                                                            {criterion.max_points} pts
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Grading Form */}
                     <form onSubmit={handleSubmit}>

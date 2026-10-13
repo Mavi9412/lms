@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -36,6 +36,8 @@ export default function Gradebook() {
     const [gradebook, setGradebook] = useState<GradebookData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [publishing, setPublishing] = useState(false);
+    const [publishMsg, setPublishMsg] = useState('');
 
     useEffect(() => {
         loadGradebook();
@@ -54,8 +56,23 @@ export default function Gradebook() {
         }
     };
 
-    const exportToCSV = () => {
-        if (!gradebook) return;
+    const publishFinalGrades = async () => {
+        if (!confirm('Publish final letter grades for all enrolled students? This overwrites previously published grades.')) return;
+        setPublishing(true);
+        setPublishMsg('');
+        try {
+            const response = await axios.post(`${API_URL}/gradebook/course/${courseId}/publish`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setPublishMsg(`Published final grades for ${response.data.published} students.`);
+        } catch (err: any) {
+            setPublishMsg(err.response?.data?.detail || 'Failed to publish grades');
+        } finally {
+            setPublishing(false);
+        }
+    };
+
+    const exportToCSV = () => {        if (!gradebook) return;
 
         const headers = ['Student Name', 'Email', ...gradebook.assignments.map(a => a.title), 'Total', 'Percentage'];
         const rows = gradebook.students.map(student => [
@@ -116,13 +133,26 @@ export default function Gradebook() {
                     </div>
                 </div>
 
-                <button
-                    onClick={exportToCSV}
-                    className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors"
-                >
-                    <Download className="w-4 h-4" />
-                    Export to CSV
-                </button>
+                <div className="flex items-center gap-3">
+                    {publishMsg && (
+                        <span className="text-sm text-text-secondary">{publishMsg}</span>
+                    )}
+                    <button
+                        onClick={publishFinalGrades}
+                        disabled={publishing}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <Send className="w-4 h-4" />
+                        {publishing ? 'Publishing...' : 'Publish Final Grades'}
+                    </button>
+                    <button
+                        onClick={exportToCSV}
+                        className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg transition-colors"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export to CSV
+                    </button>
+                </div>
             </div>
 
             <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">

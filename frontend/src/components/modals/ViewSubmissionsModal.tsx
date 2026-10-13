@@ -9,6 +9,7 @@ interface Assignment {
     description: string;
     due_date: string;
     max_points: number;
+    course_id?: number;
 }
 
 interface Submission {
@@ -239,6 +240,7 @@ const ViewSubmissionsModal = ({ assignment, onClose }: Props) => {
                 <GradeSubmissionModal
                     submission={selectedSubmission}
                     maxPoints={assignment.max_points}
+                    courseId={assignment.course_id}
                     onClose={() => {
                         setShowGradeModal(false);
                         setSelectedSubmission(null);
