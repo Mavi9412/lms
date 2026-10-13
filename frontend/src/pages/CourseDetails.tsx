@@ -24,7 +24,7 @@ import {
     Megaphone,
     MessageSquare,
     Pin,
-    ThumbsUp
+    Award
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 import CreateAssignmentModal from '../components/CreateAssignmentModal';
@@ -34,6 +34,7 @@ import UploadMaterialModal from '../components/UploadMaterialModal';
 import CreateQuizModal from '../components/CreateQuizModal';
 import CreateAnnouncementModal from '../components/CreateAnnouncementModal';
 import CreateThreadModal from '../components/CreateThreadModal';
+import CreateLessonModal from '../components/modals/CreateLessonModal';
 
 interface Teacher {
     id: number;
@@ -81,11 +82,12 @@ const CourseDetails = () => {
     const [enrolling, setEnrolling] = useState(false);
 
     // Tabs
-    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'quizzes' | 'announcements' | 'discussions' | 'grades'>('lessons');
+    const [activeTab, setActiveTab] = useState<'lessons' | 'assignments' | 'materials' | 'quizzes' | 'announcements' | 'discussions' | 'grades' | 'rubrics'>('lessons');
 
     // Edit Modal State
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isCreateLessonModalOpen, setIsCreateLessonModalOpen] = useState(false);
 
     // Assignment Modals
     const [isCreateAssignModalOpen, setIsCreateAssignModalOpen] = useState(false);
@@ -109,6 +111,11 @@ const CourseDetails = () => {
     const [threads, setThreads] = useState<any[]>([]);
     const [isCreateThreadModalOpen, setIsCreateThreadModalOpen] = useState(false);
 
+    // Rubrics (read-only for students)
+    const [rubrics, setRubrics] = useState<any[]>([]);
+    const [expandedRubric, setExpandedRubric] = useState<number | null>(null);
+    const [rubricDetails, setRubricDetails] = useState<Record<number, any>>({});
+
     useEffect(() => {
         fetchCourseDetails();
         fetchAssignments();
@@ -116,6 +123,7 @@ const CourseDetails = () => {
         fetchQuizzes();
         fetchAnnouncements();
         fetchThreads();
+        fetchRubrics();
     }, [id]);
 
     const fetchCourseDetails = async () => {
@@ -171,6 +179,31 @@ const CourseDetails = () => {
             setThreads(response.data);
         } catch (error) {
             console.error('Failed to fetch threads', error);
+        }
+    };
+
+    const fetchRubrics = async () => {
+        try {
+            const response = await api.get(`/rubrics/course/${id}`);
+            setRubrics(response.data);
+        } catch (error) {
+            console.error('Failed to fetch rubrics', error);
+        }
+    };
+
+    const toggleRubric = async (rubricId: number) => {
+        if (expandedRubric === rubricId) {
+            setExpandedRubric(null);
+            return;
+        }
+        setExpandedRubric(rubricId);
+        if (!rubricDetails[rubricId]) {
+            try {
+                const response = await api.get(`/rubrics/${rubricId}`);
+                setRubricDetails((prev) => ({ ...prev, [rubricId]: response.data }));
+            } catch (error) {
+                console.error('Failed to fetch rubric details', error);
+            }
         }
     };
 
@@ -270,6 +303,18 @@ const CourseDetails = () => {
                 courseId={id}
                 onLessonUpdated={fetchCourseDetails}
             />
+
+            {/* Create Lesson Modal */}
+            {isCreateLessonModalOpen && (
+                <CreateLessonModal
+                    courseId={id || ''}
+                    onClose={() => setIsCreateLessonModalOpen(false)}
+                    onSuccess={() => {
+                        setIsCreateLessonModalOpen(false);
+                        fetchCourseDetails();
+                    }}
+                />
+            )}
 
             {/* Create Assignment Modal */}
             {id && (
@@ -460,6 +505,13 @@ const CourseDetails = () => {
                     <MessageSquare className="w-4 h-4" />
                     Discussions
                 </button>
+                <button
+                    onClick={() => setActiveTab('rubrics')}
+                    className={`flex items-center gap-2 px-6 py-3 border-b-2 transition-colors whitespace-nowrap ${activeTab === 'rubrics' ? 'border-primary text-primary' : 'border-transparent text-text-secondary hover:text-white'}`}
+                >
+                    <Award className="w-4 h-4" />
+                    Rubrics
+                </button>
                 {isStudent && (
                     <button
                         onClick={() => setActiveTab('grades')}
@@ -481,7 +533,10 @@ const CourseDetails = () => {
                                 Course Lessons
                             </h2>
                             {isOwner && (
-                                <button className="btn btn-primary flex items-center gap-2 text-sm">
+                                <button
+                                    onClick={() => setIsCreateLessonModalOpen(true)}
+                                    className="btn btn-primary flex items-center gap-2 text-sm"
+                                >
                                     <Plus className="w-4 h-4" />
                                     Add Lesson
                                 </button>
@@ -500,7 +555,30 @@ const CourseDetails = () => {
                                                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{index + 1}</div>
                                                 <h3 className="font-semibold text-lg">{lesson.title}</h3>
                                             </div>
-                                            {expandedLessons.has(lesson.id) ? <ChevronUp /> : <ChevronDown />}
+                                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                {isOwner && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingLesson(lesson);
+                                                                setIsEditModalOpen(true);
+                                                            }}
+                                                            className="p-2 text-text-secondary hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                                                            title="Edit lesson"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteLesson(lesson.id)}
+                                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                            title="Delete lesson"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {expandedLessons.has(lesson.id) ? <ChevronUp /> : <ChevronDown />}
+                                            </div>
                                         </div>
                                         {expandedLessons.has(lesson.id) && (
                                             <div className="mt-4 p-4 bg-bg-primary/50 rounded-lg text-text-secondary">
@@ -823,6 +901,82 @@ const CourseDetails = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'rubrics' && (
+                    <div className="glass rounded-2xl p-8 border border-white/5">
+                        <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+                            <Award className="w-7 h-7 text-primary" />
+                            Grading Rubrics
+                        </h2>
+                        <p className="text-text-secondary text-sm mb-6">
+                            How your work is evaluated in this course.
+                        </p>
+                        {rubrics.length === 0 ? (
+                            <div className="text-center py-8 text-text-secondary">
+                                <p>No rubrics published for this course yet.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {rubrics.map((rubric: any) => {
+                                    const detail = rubricDetails[rubric.id];
+                                    const isOpen = expandedRubric === rubric.id;
+                                    return (
+                                        <div key={rubric.id} className="bg-bg-secondary rounded-xl border border-white/5 overflow-hidden">
+                                            <button
+                                                onClick={() => toggleRubric(rubric.id)}
+                                                className="w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition-colors"
+                                            >
+                                                <div>
+                                                    <p className="font-semibold text-white">{rubric.title}</p>
+                                                    {rubric.description && (
+                                                        <p className="text-sm text-text-secondary mt-0.5">{rubric.description}</p>
+                                                    )}
+                                                </div>
+                                                {isOpen ? (
+                                                    <ChevronUp className="w-5 h-5 text-text-secondary shrink-0" />
+                                                ) : (
+                                                    <ChevronDown className="w-5 h-5 text-text-secondary shrink-0" />
+                                                )}
+                                            </button>
+                                            {isOpen && (
+                                                <div className="px-5 pb-5 space-y-2">
+                                                    {detail ? (
+                                                        <>
+                                                            {detail.criteria.map((criterion: any) => (
+                                                                <div
+                                                                    key={criterion.id}
+                                                                    className="flex items-center justify-between bg-bg-primary rounded-lg px-4 py-3"
+                                                                >
+                                                                    <div>
+                                                                        <span className="text-white text-sm font-medium">{criterion.name}</span>
+                                                                        {criterion.description && (
+                                                                            <span className="text-text-secondary text-sm"> — {criterion.description}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold whitespace-nowrap ml-3">
+                                                                        {criterion.max_points} pts
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            <p className="text-right text-sm text-text-secondary pt-1">
+                                                                Total:{' '}
+                                                                <span className="text-white font-bold">
+                                                                    {detail.criteria.reduce((s: number, c: any) => s + c.max_points, 0)} pts
+                                                                </span>
+                                                            </p>
+                                                        </>
+                                                    ) : (
+                                                        <p className="text-text-secondary text-sm py-2">Loading criteria...</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

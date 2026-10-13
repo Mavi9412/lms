@@ -5,6 +5,11 @@ __pycache__/
 venv/
 .env
 
+# Local dev database / uploads — never commit
+*.db
+*.sqlite3
+uploads/
+
 # Node
 node_modules/
 dist/
