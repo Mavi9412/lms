@@ -159,6 +159,9 @@ Examiner ko samjhane ke liye yeh live example batayein:
 ### Q5: "Attendance policy kaise kaam karti hai?"
 > **Jawab:** "System mein `AttendancePolicy` table hai jahan university standard (75% minimum) set hai. Jab student dashboard open karta hai to system uski total classes aur attended classes calculate kar ke percentage nikalta hai. Agar attendance 75% se kam ho to student ko red warning alert milta hai."
 
+### Q6: "Admin account kaise create hota hai? Kya koi bhi bahar se register ho sakta hai?"
+> **Jawab:** "Nahi sir! Security point of view se public signup page (`/register`) par sirf **Students** aur **Teachers** account bana sakte hain. Administrator accounts ki self-registration frontend aur backend dono par strictly block hai (direct API call par bhi backend `403 Forbidden` throw karta hai). Naya Admin sirf mojooda Super Admin apne **Admin Portal (`/admin/users -> + Add User`)** se hi provision kar sakta hai."
+
 ---
 
 ## 7. Project Ko Local Run Karne Ka Asaan Tareeqa
