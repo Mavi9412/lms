@@ -48,6 +48,24 @@ flowchart TD
     F --> H["Student Enrollment (Students enroll hoty hain)"]
 ```
 
+### Complete Workflow Ka Sequence Diagram:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as 1. Admin
+    actor Teacher as 2. Teacher
+    actor Student as 3. Student
+    participant System as LMS Backend & Database
+
+    Admin->>System: Course banata hai aur Teacher ko Section assign karta hai
+    Teacher->>System: Login karta hai aur Lecture PDF + Assignment upload karta hai
+    Student->>System: Login karke Course mein enroll hota hai aur PDF download karta hai
+    Student->>System: Assignment solve karke online submit karta hai
+    Teacher->>System: Student ki submission open karke 96/100 marks aur remarks deta hai
+    Teacher->>System: Student ki attendance "Present" mark karta hai
+    Student->>System: Report card check karta hai (96% Marks + 100% Attendance Verified)
+```
+
 Is hierarchy ka faida yeh hai ke:
 - Koi bhi student kisi ghalat course ya section mein nahi ja sakta.
 - Teacher sirf usi section ke students ko mark kar sakta hai jo admin ne use assign kiya hai.
