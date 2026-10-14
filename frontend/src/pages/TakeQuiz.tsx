@@ -176,7 +176,7 @@ export default function TakeQuiz() {
                                 {question.options.map((option, optIndex) => (
                                     <label
                                         key={optIndex}
-                                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === String(optIndex)
+                                        className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${answers[question.id] === option || answers[question.id] === String(optIndex)
                                                 ? 'border-teal-500 bg-teal-500/10'
                                                 : 'border-gray-600 hover:border-gray-500'
                                             }`}
@@ -184,9 +184,9 @@ export default function TakeQuiz() {
                                         <input
                                             type="radio"
                                             name={`question-${question.id}`}
-                                            value={optIndex}
-                                            checked={answers[question.id] === String(optIndex)}
-                                            onChange={(e) => handleAnswer(question.id, e.target.value)}
+                                            value={option}
+                                            checked={answers[question.id] === option || answers[question.id] === String(optIndex)}
+                                            onChange={() => handleAnswer(question.id, option)}
                                             className="text-teal-500 focus:ring-teal-500"
                                         />
                                         <span className="text-white">{option}</span>

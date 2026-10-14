@@ -314,22 +314,54 @@ def seed_complete_university():
                 session.commit()
                 print(f"  + Added Material to {code}: {filename}")
 
+        # Clear old/duplicate lessons for seeded courses so curriculum stays clean and ordered
+        for code in course_map:
+            cid = course_map[code].id
+            old_lessons = session.exec(select(Lesson).where(Lesson.course_id == cid)).all()
+            for ol in old_lessons:
+                session.delete(ol)
+        session.commit()
+
         lessons_to_create = [
-            ("CS-202", "Relational Algebra & Normal Forms (1NF, 2NF, 3NF, BCNF)", "Normalization is the systematic approach of decomposing tables to eliminate data redundancy and anomalies.", 1),
-            ("CS-301", "Self-Balancing Binary Trees (AVL & Red-Black)", "An AVL tree maintains height balance (factor of -1, 0, or 1) using LL, RR, LR, and RL rotations.", 1),
-            ("CS-305", "TCP/IP Layering & Packet Encapsulation", "Detailed walk-through of Application, Transport (TCP/UDP), Network (IP), Data Link (MAC), and Physical layers.", 1),
-            ("EE-201", "Nodal & Mesh Analysis for Resistive Networks", "Applying KCL at non-reference nodes to calculate unknown nodal voltages systematically using matrix determinants.", 1),
-            ("EE-302", "Fourier Series Representations of Periodic Signals", "Representing periodic continuous-time signals as a weighted superposition of harmonically related complex sinusoids.", 1)
+            # CS-202 Database Systems (5 Modules)
+            ("CS-202", "Module 1: Relational Model Foundations & Codd's Rules", "Study Edgar Codd's foundational 12 rules, entity integrity, referential integrity, and relational algebra operations (Selection, Projection, Join).", 1),
+            ("CS-202", "Module 2: Entity-Relationship (ER) & Schema Design", "Translating real-world domain requirements into formal ER diagrams with cardinalities, weak entities, and converting them into normalized relational tables.", 2),
+            ("CS-202", "Module 3: Normalization Techniques (1NF, 2NF, 3NF, BCNF)", "Systematic functional dependency analysis and table decomposition to eliminate insertion, deletion, and update anomalies.", 3),
+            ("CS-202", "Module 4: SQL Query Mastery & Relational Joins", "Writing high-performance queries using INNER, LEFT, RIGHT, FULL OUTER joins, aggregate functions, GROUP BY, HAVING clauses, and subqueries.", 4),
+            ("CS-202", "Module 5: Transactions, ACID Properties & Concurrency Control", "Deep dive into Atomicity, Consistency, Isolation, and Durability, write-ahead logging (WAL), and 2-Phase Locking (2PL) protocols.", 5),
+
+            # CS-301 Data Structures & Algorithms (5 Modules)
+            ("CS-301", "Module 1: Tree Terminology & Binary Tree Traversals", "Hierarchical data representation, depth vs. height, and recursive implementations of Pre-order, In-order, and Post-order traversals.", 1),
+            ("CS-301", "Module 2: Binary Search Trees (BST) & Search Complexity", "Properties of BST (left < root <= right), searching, insertion, and deletion algorithms, analyzing average O(log n) vs worst-case O(n) complexity.", 2),
+            ("CS-301", "Module 3: Self-Balancing Trees: AVL Rotations & Rebalancing", "Deep dive into Balance Factors (-1, 0, +1), and restoring invariant height balance through Single (LL, RR) and Double (LR, RL) rotations.", 3),
+            ("CS-301", "Module 4: Binary Heaps & Priority Queue Implementations", "Max-Heap and Min-Heap array representations, Percolate-Up, Percolate-Down operations, and O(n log n) Heap Sort.", 4),
+            ("CS-301", "Module 5: Graph Theory & Traversal Algorithms (BFS / DFS)", "Graph representation using Adjacency Lists and Matrices; Breadth-First Search (Queue) and Depth-First Search (Stack) implementations.", 5),
+
+            # CS-305 Computer Networks (4 Modules)
+            ("CS-305", "Module 1: Network Architectures & Layered Reference Models", "Comparison of OSI 7-Layer model and TCP/IP protocol suite, packet encapsulation, and header parsing.", 1),
+            ("CS-305", "Module 2: Data Link Layer, MAC Addressing & Error Detection", "Ethernet framing, cyclic redundancy checks (CRC), collision detection (CSMA/CD), and switch forwarding tables.", 2),
+            ("CS-305", "Module 3: IP Addressing, CIDR Subnetting & VLSM", "Hierarchical IP routing, Classless Inter-Domain Routing notation, variable length subnet masking, and gateway routing.", 3),
+            ("CS-305", "Module 4: Transport Protocols: TCP 3-Way Handshake vs UDP", "Reliable transmission, sequence numbering, acknowledgment packets, window flow control, and UDP streaming.", 4),
+
+            # EE-201 Electric Circuit Analysis (4 Modules)
+            ("EE-201", "Module 1: Fundamental Circuit Laws (Ohm's, KCL, KVL)", "Charge, current, voltage, Kirchhoff's Current Law at nodes, and Kirchhoff's Voltage Law around closed loops.", 1),
+            ("EE-201", "Module 2: Systematic Nodal & Mesh Analysis", "Formulating matrix nodal equations for circuits with independent and dependent sources using Gaussian elimination.", 2),
+            ("EE-201", "Module 3: Network Theorems (Thevenin & Norton Equivalents)", "Simplifying complex linear two-terminal networks to equivalent voltage/current sources and maximum power transfer theorem.", 3),
+            ("EE-201", "Module 4: Transient Response of First-Order RC & RL Circuits", "Differential equations governing charging and discharging phases with time constants tau = RC and tau = L/R.", 4),
+
+            # EE-302 Signals and Systems (4 Modules)
+            ("EE-302", "Module 1: Continuous-Time & Discrete-Time Signal Properties", "Classification of signals: even/odd, periodic/aperiodic, energy/power, and transformations of independent variables.", 1),
+            ("EE-302", "Module 2: Linear Time-Invariant (LTI) Systems & Convolution", "Impulse response characterization, causality, stability, and evaluation of continuous and discrete convolution integrals.", 2),
+            ("EE-302", "Module 3: Fourier Series Representation of Periodic Signals", "Trigonometric and exponential Fourier series, harmonic spectrum, and frequency response analysis.", 3),
+            ("EE-302", "Module 4: Continuous-Time Fourier Transform (CTFT)", "Spectral analysis of non-periodic signals, properties of duality, modulation, and ideal filter frequency responses.", 4)
         ]
 
         for code, l_title, l_content, order in lessons_to_create:
             cid = course_map[code].id
-            lesson = session.exec(select(Lesson).where(Lesson.course_id == cid).where(Lesson.title == l_title)).first()
-            if not lesson:
-                lesson = Lesson(title=l_title, content=l_content, order=order, course_id=cid)
-                session.add(lesson)
-                session.commit()
-                print(f"  + Added Lesson to {code}: {l_title}")
+            lesson = Lesson(title=l_title, content=l_content, order=order, course_id=cid)
+            session.add(lesson)
+        session.commit()
+        print(f"  + Seeded {len(lessons_to_create)} structured curriculum modules across all courses.")
 
         # -------------------------------------------------------------
         # 8. ASSIGNMENTS, SUBMISSIONS & GRADING

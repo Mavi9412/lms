@@ -235,10 +235,25 @@ def submit_quiz(
         is_correct = False
         points_earned = 0.0
         
+        clean_ans = (answer_text or "").strip()
+        clean_correct = (question.correct_answer or "").strip()
+
         if question.question_type == QuestionType.true_false:
-            is_correct = answer_text.lower() == question.correct_answer.lower()
+            is_correct = clean_ans.lower() == clean_correct.lower()
         elif question.question_type == QuestionType.mcq:
-            is_correct = answer_text == question.correct_answer
+            if clean_ans == clean_correct:
+                is_correct = True
+            else:
+                opts = []
+                try:
+                    if question.options:
+                        opts = json.loads(question.options) if isinstance(question.options, str) else list(question.options)
+                except Exception:
+                    pass
+                if clean_ans.isdigit() and int(clean_ans) < len(opts) and opts[int(clean_ans)] == clean_correct:
+                    is_correct = True
+                elif clean_correct.isdigit() and int(clean_correct) < len(opts) and opts[int(clean_correct)] == clean_ans:
+                    is_correct = True
         
         if is_correct:
             points_earned = question.points

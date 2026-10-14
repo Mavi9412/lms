@@ -165,8 +165,17 @@ export default function QuizResults() {
                         {result.question_type === 'mcq' && result.options && (
                             <div className="space-y-2">
                                 {result.options.map((option, optIndex) => {
-                                    const isStudentAnswer = result.student_answer === String(optIndex);
-                                    const isCorrectAnswer = result.correct_answer === String(optIndex);
+                                    const cleanStudent = (result.student_answer || '').trim();
+                                    const cleanCorrect = (result.correct_answer || '').trim();
+
+                                    const isStudentAnswer = 
+                                        cleanStudent === option || 
+                                        cleanStudent === String(optIndex);
+
+                                    const isCorrectAnswer = 
+                                        cleanCorrect === option || 
+                                        cleanCorrect === String(optIndex) ||
+                                        (result.options && result.options[parseInt(cleanCorrect)] === option);
 
                                     return (
                                         <div
@@ -192,8 +201,10 @@ export default function QuizResults() {
                         {result.question_type === 'true_false' && (
                             <div className="space-y-2">
                                 {['true', 'false'].map((value) => {
-                                    const isStudentAnswer = result.student_answer.toLowerCase() === value;
-                                    const isCorrectAnswer = result.correct_answer.toLowerCase() === value;
+                                    const cleanStudent = (result.student_answer || '').trim().toLowerCase();
+                                    const cleanCorrect = (result.correct_answer || '').trim().toLowerCase();
+                                    const isStudentAnswer = cleanStudent === value;
+                                    const isCorrectAnswer = cleanCorrect === value;
 
                                     return (
                                         <div
@@ -220,9 +231,20 @@ export default function QuizResults() {
                             <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                                 <p className="text-sm text-yellow-400">
                                     <strong>Correct Answer: </strong>
-                                    {result.question_type === 'mcq' && result.options
-                                        ? result.options[parseInt(result.correct_answer)]
-                                        : result.correct_answer}
+                                    {(() => {
+                                        const cleanCorrect = (result.correct_answer || '').trim();
+                                        if (result.question_type === 'mcq' && result.options) {
+                                            if (/^\d+$/.test(cleanCorrect)) {
+                                                const idx = parseInt(cleanCorrect);
+                                                return result.options[idx] || cleanCorrect;
+                                            }
+                                            return cleanCorrect;
+                                        }
+                                        if (result.question_type === 'true_false') {
+                                            return cleanCorrect ? cleanCorrect.charAt(0).toUpperCase() + cleanCorrect.slice(1) : cleanCorrect;
+                                        }
+                                        return cleanCorrect;
+                                    })()}
                                 </p>
                             </div>
                         )}
