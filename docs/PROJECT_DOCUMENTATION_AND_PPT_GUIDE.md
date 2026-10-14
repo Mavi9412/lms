@@ -96,6 +96,80 @@ graph TD
     StaticServer --> DiskStorage
 ```
 
+### 4.2 Process Sequence Diagrams
+
+#### A. University Academic Lifecycle Sequence Diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+    actor Teacher
+    actor Student
+    participant API as FastAPI Backend
+    participant DB as SQLite / PostgreSQL
+    participant FS as Local Storage (/uploads)
+
+    Note over Admin,DB: Phase 1: Course Creation & Faculty Allocation
+    Admin->>API: POST /courses/ (Title: "CS-301 DSA", Dept: CS)
+    API->>DB: INSERT into course & default section
+    Admin->>API: POST /admin/sections/4/assign-teacher/5
+    API->>DB: UPDATE section SET teacher_id = 5 (Prof. Tariq)
+    API-->>Admin: 200 OK: "Assigned Prof. Tariq to Section A"
+
+    Note over Teacher,FS: Phase 2: Material & Assessment Authoring
+    Teacher->>API: POST /courses/4/materials (Upload CS301_Lecture_01.pdf)
+    API->>FS: Persist PDF file in /uploads/
+    API->>DB: INSERT into course_material (file_path, course_id)
+    Teacher->>API: POST /courses/4/lessons (Lesson: Binary Trees)
+    API->>DB: INSERT into lesson
+    Teacher->>API: POST /assignments/ (AVL Trees, Max: 100)
+    API->>DB: INSERT into assignment
+
+    Note over Student,API: Phase 3: Learning & Submission
+    Student->>API: POST /courses/4/enroll
+    API->>DB: INSERT into enrollment (student_id, section_id)
+    Student->>API: GET /courses/4/materials
+    API->>FS: Read PDF file
+    API-->>Student: 200 OK (Stream PDF file)
+    Student->>API: POST /assignments/4/submit (GitHub Code Solution)
+    API->>DB: INSERT into submission (assignment_id, student_id)
+
+    Note over Teacher,Student: Phase 4: Attendance & Evaluation
+    Teacher->>API: POST /attendance/sections/4/mark (Student: Present)
+    API->>DB: INSERT into attendance
+    Teacher->>API: POST /assignments/submissions/3/grade (Score: 96, Feedback: "Excellent!")
+    API->>DB: UPDATE submission SET grade = 96, feedback = 'Excellent!'
+    Student->>API: GET /users/10/enrollments & /assignments/my-submissions
+    API-->>Student: 200 OK: Grade 96/100, Remarks & 100% Attendance Verified
+```
+
+#### B. Authentication & JWT Handshake Sequence Diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (Admin / Teacher / Student)
+    participant UI as React 19 Frontend
+    participant API as FastAPI Backend (/auth)
+    participant DB as Database
+
+    User->>UI: Enter Credentials (Email & Password)
+    UI->>API: POST /auth/token (username, password)
+    API->>DB: SELECT * FROM user WHERE email = ?
+    DB-->>API: User Record with hashed_password
+    API->>API: Verify Password with PBKDF2-SHA256
+    alt Password Matches
+        API->>API: Generate Signed JWT Token (HS256 with role & exp)
+        API-->>UI: 200 OK: { access_token, token_type: "bearer" }
+        UI->>UI: Store access_token in localStorage & AuthContext
+        UI->>API: GET /auth/me (Header: Authorization: Bearer <token>)
+        API-->>UI: 200 OK: { id, email, full_name, role }
+        UI->>UI: Route Guard forwards to role dashboard (/admin, /teacher, /student)
+    else Invalid Password
+        API-->>UI: 401 Unauthorized ("Incorrect email or password")
+        UI-->>User: Display Toast Error Message
+    end
+```
+
 ---
 
 ## 5. Entity Relationship Diagram (ERD) & Database Schema
@@ -187,6 +261,85 @@ erDiagram
         int marked_by FK
     }
 ```
+
+### 5.3 Comprehensive Database Data Dictionary
+
+| Table Name | Column Name | Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **`department`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Unique department identifier. |
+| | `name` | `VARCHAR` | `UNIQUE`, `INDEX`, Not Null | Full department title (e.g., Computer Science). |
+| | `code` | `VARCHAR` | `UNIQUE`, `INDEX`, Not Null | Department short code (e.g., CS, EE). |
+| **`program`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Unique academic degree program ID. |
+| | `name` | `VARCHAR` | Not Null | Degree title (e.g., BS Computer Science). |
+| | `code` | `VARCHAR` | Not Null | Program acronym (e.g., BSCS, BSEE). |
+| | `department_id` | `INTEGER` | `FOREIGN KEY` -> `department.id` | Associated parent department. |
+| **`batch`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Cohort batch identifier. |
+| | `name` | `VARCHAR` | Not Null | Cohort label (e.g., Batch 2026-CS). |
+| | `program_id` | `INTEGER` | `FOREIGN KEY` -> `program.id` | Program under which batch studies. |
+| | `start_date` | `DATETIME` | Not Null | Official start of the batch cohort. |
+| | `is_active` | `BOOLEAN` | Default `True` | Whether cohort is currently active. |
+| **`semester`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Academic semester identifier. |
+| | `name` | `VARCHAR` | Not Null | Semester label (e.g., Fall 2026). |
+| | `is_active` | `BOOLEAN` | Default `False` | Currently active teaching semester flag. |
+| **`course`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Course offering identifier. |
+| | `title` | `VARCHAR` | Not Null | Course subject title (e.g., Database Systems). |
+| | `code` | `VARCHAR` | `UNIQUE`, Not Null | Catalog course code (e.g., CS-202). |
+| | `credit_hours` | `INTEGER` | Default `3` | Academic credit value. |
+| | `department_id` | `INTEGER` | `FOREIGN KEY` -> `department.id` | Department administering the course. |
+| | `is_approved` | `BOOLEAN` | Default `False` | Administrative curricular approval flag. |
+| | `is_published` | `BOOLEAN` | Default `False` | Visibility status in student catalog. |
+| **`section`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Class section identifier. |
+| | `name` | `VARCHAR` | Not Null | Section designation (e.g., Section A). |
+| | `course_id` | `INTEGER` | `FOREIGN KEY` -> `course.id` | Course being taught in section. |
+| | `semester_id` | `INTEGER` | `FOREIGN KEY` -> `semester.id` | Semester timeframe of the class. |
+| | `teacher_id` | `INTEGER` | `FOREIGN KEY` -> `user.id` (Nullable)| Allocated faculty instructor. |
+| | `schedule` | `VARCHAR` | Nullable | Class meeting times (e.g., Mon/Wed 10:00). |
+| **`user`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | User account ID. |
+| | `email` | `VARCHAR` | `UNIQUE`, `INDEX`, Not Null | Official university email / login handle. |
+| | `full_name` | `VARCHAR` | Not Null | Display name of the user. |
+| | `role` | `VARCHAR` | Enum (`admin`, `teacher`, `student`) | Access privilege role. |
+| | `hashed_password`| `VARCHAR` | Not Null | Salted PBKDF2-SHA256 password hash. |
+| | `program_id` | `INTEGER` | `FOREIGN KEY` -> `program.id` | Enrolled degree program (Students). |
+| | `batch_id` | `INTEGER` | `FOREIGN KEY` -> `batch.id` | Cohort batch (Students). |
+| | `is_active` | `BOOLEAN` | Default `True` | Account operational status. |
+| **`enrollment`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Student enrollment record. |
+| | `student_id` | `INTEGER` | `FOREIGN KEY` -> `user.id` | Registered student. |
+| | `section_id` | `INTEGER` | `FOREIGN KEY` -> `section.id` | Enrolled course section. |
+| | `grade` | `VARCHAR` | Nullable | Final calculated letter grade (A, B+, etc.). |
+| **`course_material`**| `id`| `INTEGER`| `PRIMARY KEY`, Auto | Uploaded document ID. |
+| | `title` | `VARCHAR` | Not Null | Display title (e.g., Lecture 01 Slides). |
+| | `file_path` | `VARCHAR` | Not Null | Relative path in `/uploads/` file directory. |
+| | `course_id` | `INTEGER` | `FOREIGN KEY` -> `course.id` | Course resource belongs to. |
+| **`assignment`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Course assignment record. |
+| | `title` | `VARCHAR` | Not Null | Assignment title. |
+| | `description` | `TEXT` | Nullable | Problem instructions and guidelines. |
+| | `due_date` | `DATETIME` | Not Null | Submission deadline (UTC timezone). |
+| | `max_points` | `INTEGER` | Default `100` | Maximum points scale. |
+| | `course_id` | `INTEGER` | `FOREIGN KEY` -> `course.id` | Associated course. |
+| **`submission`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Student assignment submission. |
+| | `assignment_id`| `INTEGER` | `FOREIGN KEY` -> `assignment.id` | Assignment being submitted to. |
+| | `student_id` | `INTEGER` | `FOREIGN KEY` -> `user.id` | Submitting student. |
+| | `content` | `TEXT` | Not Null | Submitted text, solution, or repo link. |
+| | `file_path` | `VARCHAR` | Nullable | Uploaded homework file path. |
+| | `grade` | `FLOAT` | Nullable | Score awarded by evaluating faculty. |
+| | `feedback` | `TEXT` | Nullable | Detailed constructive teacher remarks. |
+| **`attendance`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Daily attendance entry. |
+| | `section_id` | `INTEGER` | `FOREIGN KEY` -> `section.id` | Section session attended. |
+| | `student_id` | `INTEGER` | `FOREIGN KEY` -> `user.id` | Student marked. |
+| | `date` | `DATETIME` | Not Null | Session date. |
+| | `status` | `VARCHAR` | Enum (`present`, `absent`, `late`) | Attendance state. |
+| | `marked_by` | `INTEGER` | `FOREIGN KEY` -> `user.id` | Teacher who registered the mark. |
+| **`quiz`** | `id` | `INTEGER` | `PRIMARY KEY`, Auto | Online assessment quiz. |
+| | `title` | `VARCHAR` | Not Null | Quiz assessment title. |
+| | `time_limit` | `INTEGER` | Not Null | Duration limit in minutes. |
+| | `passing_score`| `INTEGER` | Default `60` | Passing percentage threshold. |
+| | `course_id` | `INTEGER` | `FOREIGN KEY` -> `course.id` | Course quiz evaluates. |
+| **`quiz_attempt`**| `id` | `INTEGER` | `PRIMARY KEY`, Auto | Student test attempt. |
+| | `quiz_id` | `INTEGER` | `FOREIGN KEY` -> `quiz.id` | Quiz attempted. |
+| | `student_id` | `INTEGER` | `FOREIGN KEY` -> `user.id` | Examinee student. |
+| | `score` | `FLOAT` | Nullable | Auto-graded point total. |
+| | `max_score` | `FLOAT` | Nullable | Maximum possible points. |
+| | `percentage` | `FLOAT` | Nullable | Final calculated test percentage. |
 
 ---
 
