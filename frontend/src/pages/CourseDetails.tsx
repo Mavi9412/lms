@@ -232,8 +232,11 @@ const CourseDetails = () => {
         return (
             <div className="max-w-7xl mx-auto px-6 py-10 text-center">
                 <h2 className="text-2xl font-bold mb-4">Course Not Found</h2>
-                <button onClick={() => navigate('/courses')} className="btn btn-primary">
-                    Back to Courses
+                <button 
+                    onClick={() => navigate(user?.role === 'admin' ? '/admin' : user?.role === 'teacher' ? '/teacher/dashboard' : user ? '/dashboard' : '/courses')} 
+                    className="btn btn-primary"
+                >
+                    {user ? 'Back to Dashboard' : 'Back to Courses'}
                 </button>
             </div>
         );
@@ -333,14 +336,45 @@ const CourseDetails = () => {
                 />
             )}
 
-            {/* Back Button */}
-            <button
-                onClick={() => navigate('/courses')}
-                className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors mb-6 group"
-            >
-                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                <span>Back to Courses</span>
-            </button>
+            {/* Back to Dashboard Navigation */}
+            <div className="flex items-center gap-4 mb-6">
+                <button
+                    onClick={() => {
+                        if (!user) {
+                            navigate('/courses');
+                        } else if (user.role === 'student') {
+                            navigate('/dashboard');
+                        } else if (user.role === 'teacher') {
+                            navigate('/teacher/dashboard');
+                        } else if (user.role === 'admin') {
+                            navigate('/admin');
+                        } else {
+                            navigate('/dashboard');
+                        }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-primary/50 transition-all group font-medium text-sm shadow-sm"
+                >
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform text-primary" />
+                    <span>
+                        {user?.role === 'student'
+                            ? 'Back to Dashboard'
+                            : user?.role === 'teacher'
+                            ? 'Back to Teacher Dashboard'
+                            : user?.role === 'admin'
+                            ? 'Back to Admin Dashboard'
+                            : 'Back to Courses'}
+                    </span>
+                </button>
+
+                {user && (
+                    <button
+                        onClick={() => navigate('/courses')}
+                        className="text-xs text-text-secondary hover:text-white transition-colors"
+                    >
+                        Browse All Courses
+                    </button>
+                )}
+            </div>
 
             {/* Course Header */}
             <div className="glass rounded-2xl p-8 mb-8 border border-white/5">
