@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr
 from database import get_session
 from models import User, PasswordResetToken
 from auth import get_password_hash
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import secrets
 import sys
 import os
@@ -44,7 +44,7 @@ def forgot_password(
     
     # Generate reset token
     token = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
     
     # Invalidate any existing tokens for this user
     existing_tokens = session.exec(
@@ -101,7 +101,7 @@ def reset_password(
         )
     
     # Check if token is expired
-    if reset_token.expires_at < datetime.utcnow():
+    if reset_token.expires_at < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has expired"

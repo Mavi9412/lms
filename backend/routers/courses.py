@@ -63,6 +63,7 @@ def create_course(
     )
     session.add(section)
     session.commit()
+    session.refresh(db_course)
 
     return db_course
 

@@ -117,6 +117,8 @@ def mark_attendance(
     # Parse date
     try:
         attendance_date = datetime.fromisoformat(request.date.replace('Z', '+00:00'))
+        if attendance_date.tzinfo is None:
+            attendance_date = attendance_date.replace(tzinfo=timezone.utc)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
     

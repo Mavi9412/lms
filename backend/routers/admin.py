@@ -80,6 +80,7 @@ def create_user(
     )
     session.add(log)
     session.commit()
+    session.refresh(new_user)
     
     return new_user
 
@@ -123,6 +124,7 @@ def update_user(
     )
     session.add(log)
     session.commit()
+    session.refresh(user)
     
     return user
 
@@ -275,6 +277,7 @@ def create_batch(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return batch
 
@@ -308,6 +311,7 @@ def update_batch(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return batch
 
@@ -325,6 +329,7 @@ def toggle_batch_active(
     batch.is_active = not batch.is_active
     session.add(batch)
     session.commit()
+    session.refresh(batch)
     
     # Audit Log
     action = "ACTIVATE_BATCH" if batch.is_active else "DEACTIVATE_BATCH"
@@ -336,6 +341,7 @@ def toggle_batch_active(
     )
     session.add(log)
     session.commit()
+    session.refresh(batch)
     
     return {"message": f"Batch {'activated' if batch.is_active else 'deactivated'}", "is_active": batch.is_active}
 
@@ -432,6 +438,7 @@ def create_course(
     )
     session.add(log)
     session.commit()
+    session.refresh(course_data)
     
     return course_data
 
@@ -471,6 +478,7 @@ def update_course(
     )
     session.add(log)
     session.commit()
+    session.refresh(course)
     
     return course
 

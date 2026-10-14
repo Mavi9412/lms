@@ -7,7 +7,7 @@ from models import (
     QuizCreate, QuestionCreate, QuizSubmission, QuestionType
 )
 from auth import get_current_user
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 router = APIRouter(
@@ -159,7 +159,7 @@ def start_quiz_attempt(
         raise HTTPException(status_code=404, detail="Quiz not found")
     
     # Check availability
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if quiz.available_from and now < quiz.available_from:
         raise HTTPException(status_code=400, detail="Quiz not yet available")
     if quiz.available_until and now > quiz.available_until:
@@ -255,7 +255,7 @@ def submit_quiz(
         session.add(answer)
     
     # Update attempt
-    attempt.submitted_at = datetime.utcnow()
+    attempt.submitted_at = datetime.now(timezone.utc)
     attempt.score = total_score
     attempt.max_score = max_score
     attempt.percentage = (total_score / max_score * 100) if max_score > 0 else 0
