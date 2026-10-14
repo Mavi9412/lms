@@ -59,19 +59,20 @@ def get_teacher_dashboard(
                 "code": course.code if course else "N/A",
                 "credit_hours": course.credit_hours if course else 0
             },
-            "semester": section.semester if section.semester else "Current",
+            "semester": section.semester.name if (section.semester and hasattr(section.semester, 'name')) else "Current",
             "enrolled_count": enrollment_count,
-            "capacity": section.capacity
+            "capacity": getattr(section, "capacity", 50)
         })
     
     # Get pending grading tasks
-    # Find all assignments in teacher's sections
-    section_ids = [s.id for s in sections]
+    # Find all assignments in teacher's courses
+    course_ids = [s.course_id for s in sections]
     
     pending_grading = []
-    if section_ids:
-        # Get assignments for these sections
-        assignments_query = select(Assignment).where(Assignment.section_id.in_(section_ids))
+    assignments = []
+    if course_ids:
+        # Get assignments for these courses
+        assignments_query = select(Assignment).where(Assignment.course_id.in_(course_ids))
         assignments = session.exec(assignments_query).all()
         
         for assignment in assignments:
@@ -84,14 +85,14 @@ def get_teacher_dashboard(
             
             if ungraded_count > 0:
                 # Get section and course info
-                section = session.get(Section, assignment.section_id)
-                course = session.get(Course, section.course_id) if section else None
+                section = next((s for s in sections if s.course_id == assignment.course_id), None)
+                course = session.get(Course, assignment.course_id)
                 
                 pending_grading.append({
                     "assignment_id": assignment.id,
                     "assignment_title": assignment.title,
-                    "section_id": assignment.section_id,
-                    "section_name": section.name if section else "Unknown",
+                    "section_id": section.id if section else 0,
+                    "section_name": section.name if section else "General",
                     "course_code": course.code if course else "N/A",
                     "course_title": course.title if course else "Unknown",
                     "pending_count": ungraded_count,
@@ -115,7 +116,7 @@ def get_teacher_dashboard(
             "total_courses": len(assigned_sections),
             "total_students": total_students,
             "pending_tasks": len(pending_grading),
-            "total_assignments": len(assignments) if section_ids else 0
+            "total_assignments": len(assignments) if course_ids else 0
         }
     }
 
@@ -143,10 +144,9 @@ def get_teacher_sections(
             "course_title": course.title if course else "Unknown",
             "course_code": course.code if course else "N/A",
             "course_description": course.description if course else None,
-            "credit_hours": course.credit_hours if course else 0,
-            "semester": section.semester,
+            "semester": section.semester.name if (section.semester and hasattr(section.semester, 'name')) else "Current",
             "enrolled_count": enrollment_count,
-            "capacity": section.capacity
+            "capacity": getattr(section, "capacity", 50)
         })
     
     return result

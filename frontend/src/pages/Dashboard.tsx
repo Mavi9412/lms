@@ -1,20 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import NotificationBell from '../components/NotificationBell';
 import {
     BookOpen,
     GraduationCap,
     Users,
     Clock,
     ArrowRight,
-    PlayCircle,
-    FileText,
-    Calendar,
-    Plus,
-    LogOut,
-    User,
-    Settings
+    PlayCircle
 } from 'lucide-react';
 
 const Dashboard = () => {

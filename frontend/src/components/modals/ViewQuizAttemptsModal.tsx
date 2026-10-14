@@ -35,7 +35,7 @@ interface Props {
 const ViewQuizAttemptsModal = ({ quiz, onClose }: Props) => {
     const [attempts, setAttempts] = useState<AttemptWithStudent[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedAttempt, setSelectedAttempt] = useState<number | null>(null);
+    const [, setSelectedAttempt] = useState<number | null>(null);
     const [attemptDetails, setAttemptDetails] = useState<any>(null);
     const [showDetails, setShowDetails] = useState(false);
 

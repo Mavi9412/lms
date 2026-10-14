@@ -1,4 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 from typing import Optional, List
 from sqlmodel import Field, SQLModel, Relationship
 from enum import Enum
@@ -78,7 +81,7 @@ class CourseMaterial(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     file_path: str
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=utc_now)
     course_id: int = Field(foreign_key="course.id")
     
     course: Course = Relationship(back_populates="materials")
@@ -89,7 +92,7 @@ class Lesson(SQLModel, table=True):
     content: str
     order: int = 0
     course_id: int = Field(foreign_key="course.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     course: Course = Relationship(back_populates="lessons")
 
@@ -171,7 +174,7 @@ class Enrollment(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     student_id: int = Field(foreign_key="user.id")
     section_id: int = Field(foreign_key="section.id")
-    enrolled_at: datetime = Field(default_factory=datetime.utcnow)
+    enrolled_at: datetime = Field(default_factory=utc_now)
     grade: Optional[str] = None # e.g. "A", "B+" (Final grade placeholder)
     
     student: User = Relationship(back_populates="enrollments")
@@ -203,7 +206,7 @@ class Submission(SQLModel, table=True):
     student_id: int = Field(foreign_key="user.id")
     content: str # Text content or link
     file_path: Optional[str] = None # File upload path
-    submitted_at: datetime = Field(default_factory=datetime.utcnow)
+    submitted_at: datetime = Field(default_factory=utc_now)
     grade: Optional[float] = None
     feedback: Optional[str] = None
     
@@ -238,7 +241,7 @@ class AuditLog(SQLModel, table=True):
     performed_by: int = Field(foreign_key="user.id")
     target_id: Optional[int] = None # ID of the object changed
     details: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utc_now)
 
 class PasswordResetToken(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -246,7 +249,7 @@ class PasswordResetToken(SQLModel, table=True):
     token: str = Field(unique=True, index=True)
     expires_at: datetime
     used: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 # --- Attendance ---
 
@@ -262,7 +265,7 @@ class Attendance(SQLModel, table=True):
     date: datetime
     status: AttendanceStatus = Field(default=AttendanceStatus.present)
     marked_by: int = Field(foreign_key="user.id")  # Teacher who marked
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
 class AttendanceCreate(SQLModel):
     student_id: int
@@ -289,7 +292,7 @@ class Quiz(SQLModel, table=True):
     available_from: Optional[datetime] = None
     available_until: Optional[datetime] = None
     created_by: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     course: Course = Relationship(back_populates="quizzes")
     questions: List["Question"] = Relationship(back_populates="quiz", cascade_delete=True)
@@ -315,7 +318,7 @@ class QuizAttempt(SQLModel, table=True):
     quiz_id: int = Field(foreign_key="quiz.id", ondelete="CASCADE")
     student_id: int = Field(foreign_key="user.id")
     attempt_number: int = Field(default=1)
-    started_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: datetime = Field(default_factory=utc_now)
     submitted_at: Optional[datetime] = None
     score: Optional[float] = None  # calculated score
     max_score: Optional[float] = None
@@ -367,7 +370,7 @@ class Rubric(SQLModel, table=True):
     description: Optional[str] = None
     course_id: Optional[int] = Field(default=None, foreign_key="course.id")
     created_by: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     criteria: List["RubricCriterion"] = Relationship(back_populates="rubric", cascade_delete=True)
 
@@ -402,7 +405,7 @@ class Announcement(SQLModel, table=True):
     content: str  # Can be HTML
     created_by: int = Field(foreign_key="user.id")
     is_pinned: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     course: Course = Relationship()
     creator: User = Relationship()
@@ -431,7 +434,7 @@ class Notification(SQLModel, table=True):
     content: str
     link: Optional[str] = None  # URL to navigate to
     is_read: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     user: User = Relationship()
 
@@ -451,7 +454,7 @@ class DiscussionThread(SQLModel, table=True):
     content: str
     created_by: int = Field(foreign_key="user.id")
     is_pinned: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     course: Course = Relationship()
     creator: User = Relationship()
@@ -463,7 +466,7 @@ class ThreadReply(SQLModel, table=True):
     content: str
     created_by: int = Field(foreign_key="user.id")
     upvotes: int = Field(default=0)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     thread: DiscussionThread = Relationship(back_populates="replies")
     creator: User = Relationship()

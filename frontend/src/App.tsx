@@ -89,8 +89,7 @@ function App() {
               <Route path="/quiz/:quizId/take" element={<TakeQuiz />} />
               <Route path="/quiz-results/:attemptId" element={<QuizResults />} />
               <Route path="/gradebook/:courseId" element={<Gradebook />} />
-              {/* Example Protected Route */}
-              {/* <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> */}
+              <Route path="*" element={<Landing />} />
             </Route>
           </Routes>
         </div>

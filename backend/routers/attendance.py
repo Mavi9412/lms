@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from pydantic import BaseModel
@@ -169,6 +169,8 @@ def get_attendance_records(
     if date:
         try:
             filter_date = datetime.fromisoformat(date.replace('Z', '+00:00'))
+            if filter_date.tzinfo is None:
+                filter_date = filter_date.replace(tzinfo=timezone.utc)
             query = query.where(Attendance.date == filter_date)
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid date format")
@@ -275,6 +277,15 @@ def get_my_attendance_records(
         })
     return result
 
+
+# --- Get Student's Attendance Summary ---
+@router.get("/my-summary")
+def get_my_attendance_summary(
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """Get attendance records for current student for summary stats"""
+    return get_my_attendance_records(None, current_user, session)
 
 # --- Update Attendance Record ---
 @router.patch("/{attendance_id}")

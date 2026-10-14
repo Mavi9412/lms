@@ -178,8 +178,8 @@ def create_lesson(
     if current_user.role == Role.admin:
         is_authorized = True
     else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.teacher_id == current_user.id)).first()
+        if section:
             is_authorized = True
             
     if not is_authorized:
@@ -208,8 +208,8 @@ def delete_lesson(
     if current_user.role == Role.admin:
         is_authorized = True
     else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.teacher_id == current_user.id)).first()
+        if section:
             is_authorized = True
             
     if not is_authorized:
@@ -264,8 +264,8 @@ def upload_course_material(
         is_authorized = True
     else:
         # Check if user is teacher of any section of this course (simplified to Section A for now as per other endpoints)
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.teacher_id == current_user.id)).first()
+        if section:
             is_authorized = True
     
     if not is_authorized:
@@ -322,8 +322,8 @@ def delete_course_material(
     if current_user.role == Role.admin:
         is_authorized = True
     else:
-        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.name == "Section A")).first()
-        if section and section.teacher_id == current_user.id:
+        section = session.exec(select(Section).where(Section.course_id == course_id).where(Section.teacher_id == current_user.id)).first()
+        if section:
             is_authorized = True
             
     if not is_authorized:

@@ -11,7 +11,6 @@ import {
     ChevronDown,
     ChevronUp,
     Plus,
-    Edit,
     Trash2,
     UserCheck,
     FileText,
@@ -23,8 +22,7 @@ import {
     PlayCircle,
     Megaphone,
     MessageSquare,
-    Pin,
-    ThumbsUp
+    Pin
 } from 'lucide-react';
 import EditLessonModal from '../components/EditLessonModal';
 import CreateAssignmentModal from '../components/CreateAssignmentModal';
@@ -219,19 +217,6 @@ const CourseDetails = () => {
             alert(error.response?.data?.detail || 'Failed to unenroll');
         } finally {
             setEnrolling(false);
-        }
-    };
-
-    const handleDeleteLesson = async (lessonId: number) => {
-        if (!confirm('Are you sure you want to delete this lesson?')) return;
-        try {
-            await api.delete(`/courses/${id}/lessons/${lessonId}`);
-            setCourse(prev => prev ? {
-                ...prev,
-                lessons: prev.lessons.filter(l => l.id !== lessonId)
-            } : null);
-        } catch (error: any) {
-            alert(error.response?.data?.detail || 'Failed to delete lesson');
         }
     };
 

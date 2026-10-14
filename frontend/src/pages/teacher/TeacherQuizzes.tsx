@@ -126,15 +126,6 @@ const TeacherQuizzes = () => {
         }
     };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'No limit';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
-
     const isAvailable = (quiz: Quiz) => {
         const now = new Date();
         if (quiz.available_from && new Date(quiz.available_from) > now) return false;
