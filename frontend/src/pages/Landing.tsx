@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Shield, Users, Play, Star, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Shield, Users, GraduationCap, CheckCircle2, Award, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Landing = () => {
@@ -11,99 +11,115 @@ const Landing = () => {
                 <div className="absolute top-[20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-secondary/10 blur-[100px] mix-blend-screen opacity-30" />
             </div>
 
-
             {/* Hero Section */}
-            <section className="relative pt-32 pb-32 px-6 lg:pt-48">
-                <div className="max-w-5xl mx-auto text-center relative z-10">
-                    {/* Badge */}
+            <section className="relative pt-32 pb-20 px-6 lg:pt-44">
+                <div className="max-w-4xl mx-auto text-center relative z-10">
+                    {/* Academic Badge */}
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 hover:bg-white/10 transition-colors cursor-default">
-                        <Sparkles className="w-4 h-4 text-secondary" />
-                        <span className="text-sm font-medium text-white/90">LMS 2.0 is Live</span>
+                        <GraduationCap className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-white/90">University Academic Portal</span>
                     </div>
 
                     {/* Main Headline */}
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-                        The Future of Learning <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-white/50">
-                            is Here.
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
+                        Campus Learning & Academic <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-300 to-white">
+                            Management System
                         </span>
                     </h1>
 
                     {/* Subtitle */}
-                    <p className="text-xl md:text-2xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-                        Empower your students with a platform designed for <span className="text-white font-medium">clarity</span>, <span className="text-white font-medium">focus</span>, and <span className="text-white font-medium">results</span>.
+                    <p className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                        A centralized platform for students, faculty, and administration — manage course syllabi, assignments, auto-graded quizzes, and attendance in real time.
                     </p>
 
                     {/* CTA Buttons */}
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
-                        <Link to="/register" className="btn btn-premium h-14 px-8 text-lg w-full sm:w-auto">
-                            Start Learning Free
-                            <ArrowRight className="w-5 h-5 ml-2" />
+                        <Link to="/courses" className="btn btn-primary h-12 px-7 text-base w-full sm:w-auto">
+                            Browse Courses
+                            <ArrowRight className="w-4 h-4 ml-2" />
                         </Link>
-                        <button className="btn btn-secondary h-14 px-8 text-lg w-full sm:w-auto">
-                            <Play className="w-5 h-5 mr-2" />
-                            Watch Demo
-                        </button>
+                        <Link to="/login" className="btn btn-secondary h-12 px-7 text-base w-full sm:w-auto">
+                            Sign In to Portal
+                        </Link>
                     </div>
                 </div>
             </section>
 
-            {/* Stats Band */}
+            {/* Core Academic Modules Highlight */}
             <div className="border-y border-white/5 bg-white/[0.02] backdrop-blur-sm">
-                <div className="max-w-7xl mx-auto px-6 py-12">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+                <div className="max-w-7xl mx-auto px-6 py-10">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
                         {[
-                            { value: "10K+", label: "Active Learners" },
-                            { value: "500+", label: "Instructors" },
-                            { value: "1M+", label: "Lessons Taken" },
-                            { value: "4.9/5", label: "User Rating" },
+                            { value: "Student Portal", label: "Courses, Quizzes & Grades" },
+                            { value: "Teacher Portal", label: "Grading & Attendance" },
+                            { value: "Admin Console", label: "Batches & Allocations" },
+                            { value: "Auto-Grading", label: "Instant MCQ Feedback" },
                         ].map((stat, i) => (
-                            <div key={i} className="text-center">
-                                <div className="text-3xl md:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                                <div className="text-sm font-medium text-text-secondary uppercase tracking-wider">{stat.label}</div>
+                            <div key={i} className="text-center p-3">
+                                <div className="text-xl md:text-2xl font-bold text-white mb-1">{stat.value}</div>
+                                <div className="text-xs md:text-sm font-medium text-text-secondary tracking-wide">{stat.label}</div>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Features Grid */}
-            <section className="py-32 relative">
+            {/* Key Features Grid */}
+            <section className="py-24 relative">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-20">
-                        <h2 className="text-3xl md:text-5xl font-bold mb-6">Why LMS.pro?</h2>
-                        <p className="text-text-secondary text-lg max-w-2xl mx-auto">
-                            Everything you need to manage your educational empire, without the clutter.
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Academic Capabilities</h2>
+                        <p className="text-text-secondary text-base md:text-lg max-w-2xl mx-auto">
+                            Engineered for university departments, semester curriculums, and structured learning workflows.
                         </p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
                             {
-                                icon: <Shield className="w-8 h-8 text-white" />,
-                                title: "Secure by Design",
-                                desc: "Enterprise-grade encryption keeps your content and student data safe.",
+                                icon: <BookOpen className="w-7 h-7 text-white" />,
+                                title: "Structured Curriculum",
+                                desc: "Sequential weekly lessons, downloadable lecture slides, and rich study materials organized by semester.",
                                 color: "bg-blue-500/10"
                             },
                             {
-                                icon: <BookOpen className="w-8 h-8 text-white" />,
-                                title: "Interactive Courses",
-                                desc: "Create engaging content with video, quizzes, and live assignments.",
+                                icon: <Award className="w-7 h-7 text-white" />,
+                                title: "Automated Quizzes & Gradebook",
+                                desc: "Timed MCQs with instantaneous auto-grading, answer reviews, and comprehensive student gradebooks.",
                                 color: "bg-purple-500/10"
                             },
                             {
-                                icon: <Users className="w-8 h-8 text-white" />,
-                                title: "Community First",
-                                desc: "Built-in forums and chat keep your students connected and learning.",
+                                icon: <Shield className="w-7 h-7 text-white" />,
+                                title: "Role-Based Security",
+                                desc: "Strict separation of concerns between Students, Instructors, and Academic Administrators (RBAC).",
                                 color: "bg-emerald-500/10"
+                            },
+                            {
+                                icon: <FileText className="w-7 h-7 text-white" />,
+                                title: "Assignment Submissions",
+                                desc: "Digital submission portals with due date policies, grading criteria, and teacher feedback.",
+                                color: "bg-amber-500/10"
+                            },
+                            {
+                                icon: <Users className="w-7 h-7 text-white" />,
+                                title: "Attendance Tracking",
+                                desc: "Date-wise attendance recording per section with percentage calculations and eligibility flags.",
+                                color: "bg-indigo-500/10"
+                            },
+                            {
+                                icon: <CheckCircle2 className="w-7 h-7 text-white" />,
+                                title: "Academic Structure",
+                                desc: "Support for Departments (BSCS, BSSE), batches, semester enrollments, and teacher course allocations.",
+                                color: "bg-teal-500/10"
                             }
                         ].map((feature, idx) => (
-                            <div key={idx} className="group p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors duration-300">
-                                <div className={`w-14 h-14 rounded-2xl ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                            <div key={idx} className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] transition-colors duration-200">
+                                <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-5`}>
                                     {feature.icon}
                                 </div>
-                                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                                <p className="text-text-secondary leading-relaxed">
+                                <h3 className="text-lg font-bold mb-2 text-white">{feature.title}</h3>
+                                <p className="text-text-secondary text-sm leading-relaxed">
                                     {feature.desc}
                                 </p>
                             </div>
@@ -112,62 +128,21 @@ const Landing = () => {
                 </div>
             </section>
 
-            {/* Testimonial / Social Proof */}
-            <section className="py-32 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="glass-premium rounded-3xl p-12 md:p-20 relative overflow-hidden">
-                        {/* Decorative blobs */}
-                        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-
-                        <div className="grid md:grid-cols-2 gap-16 items-center relative z-10">
-                            <div>
-                                <div className="flex gap-1 mb-6">
-                                    {[1, 2, 3, 4, 5].map(i => (
-                                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                                    ))}
-                                </div>
-                                <blockquote className="text-3xl md:text-4xl font-medium leading-tight mb-8">
-                                    "The clean interface and powerful analytics have completely changed how I manage my courses."
-                                </blockquote>
-                                <div>
-                                    <div className="font-bold text-white text-lg">Sarah Johnson</div>
-                                    <div className="text-text-secondary">Director of CS, TechUniversity</div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h4 className="font-semibold text-text-secondary uppercase tracking-widest text-sm mb-6">Everything included</h4>
-                                {[
-                                    "Unlimited Students",
-                                    "Custom Domain Support",
-                                    "Drip Content Schedule",
-                                    "0% Transaction Fees",
-                                    "24/7 Priority Support"
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-center gap-3 text-lg">
-                                        <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
-                                        <span className="text-white/90">{item}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+            {/* Clean Final Call-to-Action */}
+            <section className="py-20 px-6 text-center border-t border-white/5 bg-white/[0.01]">
+                <div className="max-w-2xl mx-auto">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4">Access Your Academic Portal</h2>
+                    <p className="text-text-secondary mb-8 text-base">
+                        Sign in with your student, faculty, or administrator credentials to get started.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link to="/login" className="btn btn-primary h-12 px-8 text-base w-full sm:w-auto">
+                            Sign In to Portal
+                        </Link>
+                        <Link to="/courses" className="btn btn-secondary h-12 px-8 text-base w-full sm:w-auto">
+                            Browse Courses
+                        </Link>
                     </div>
-                </div>
-            </section>
-
-            {/* Final CTA */}
-            <section className="py-32 px-6 text-center">
-                <div className="max-w-3xl mx-auto">
-                    <h2 className="text-4xl md:text-5xl font-bold mb-8">Ready to get started?</h2>
-                    <p className="text-xl text-text-secondary mb-10">
-                        Join over 10,000 educators teaching on LMS.pro today.
-                    </p>
-                    <Link to="/register" className="btn btn-premium h-14 px-10 text-lg">
-                        Create Your Account
-                    </Link>
-                    <p className="mt-6 text-sm text-text-secondary">
-                        No credit card required. Cancel anytime.
-                    </p>
                 </div>
             </section>
         </div>

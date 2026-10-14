@@ -21,7 +21,6 @@ const Navbar = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
         { name: 'Courses', path: '/courses' },
-        { name: 'About', path: '/about' },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -34,7 +33,8 @@ const Navbar = () => {
 
     const getDashboardLink = () => {
         if (!user) return '/login';
-        return user.role === 'teacher' ? '/teacher' : '/dashboard';
+        if (user.role === 'admin') return '/admin';
+        return user.role === 'teacher' ? '/teacher/dashboard' : '/dashboard';
     };
 
     return (

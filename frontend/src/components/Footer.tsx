@@ -1,64 +1,69 @@
-import { BookOpen, Github, Twitter, Linkedin, Heart } from 'lucide-react';
+import { BookOpen, GraduationCap, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
-        <footer className="bg-bg-secondary border-t border-white/5 pt-20 pb-10">
+        <footer className="bg-bg-secondary border-t border-white/5 pt-16 pb-10">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
                     {/* Brand Column */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 md:col-span-1">
                         <Link to="/" className="flex items-center gap-2">
                             <BookOpen className="w-6 h-6 text-primary" />
-                            <span className="text-xl font-bold tracking-tight">LMS<span className="text-primary">.pro</span></span>
+                            <span className="text-xl font-bold tracking-tight">University <span className="text-primary">LMS</span></span>
                         </Link>
-                        <p className="text-text-secondary text-sm leading-relaxed max-w-xs">
-                            Empowering the next generation of learners and educators with cutting-edge digital tools.
+                        <p className="text-text-secondary text-sm leading-relaxed">
+                            A centralized academic learning management platform providing structured courses, assessments, and attendance for students and faculty.
                         </p>
                     </div>
 
-                    {/* Links Columns */}
+                    {/* Quick Links */}
                     <div>
-                        <h4 className="font-bold mb-6 text-white">Product</h4>
-                        <ul className="space-y-4 text-sm text-text-secondary">
-                            <li><Link to="#" className="hover:text-primary transition-colors">Features</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Pricing</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Demo</Link></li>
+                        <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Academic Portal</h4>
+                        <ul className="space-y-3 text-sm text-text-secondary">
+                            <li><Link to="/courses" className="hover:text-primary transition-colors">Course Catalog</Link></li>
+                            <li><Link to="/login" className="hover:text-primary transition-colors">Student & Faculty Sign In</Link></li>
+                            <li><Link to="/register" className="hover:text-primary transition-colors">Student Registration</Link></li>
                         </ul>
                     </div>
 
+                    {/* Portals */}
                     <div>
-                        <h4 className="font-bold mb-6 text-white">Company</h4>
-                        <ul className="space-y-4 text-sm text-text-secondary">
-                            <li><Link to="#" className="hover:text-primary transition-colors">About</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Blog</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Careers</Link></li>
+                        <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Portals</h4>
+                        <ul className="space-y-3 text-sm text-text-secondary">
+                            <li><Link to="/dashboard" className="hover:text-primary transition-colors">Student Dashboard</Link></li>
+                            <li><Link to="/teacher/dashboard" className="hover:text-primary transition-colors">Teacher Portal</Link></li>
+                            <li><Link to="/admin" className="hover:text-primary transition-colors">Admin Management</Link></li>
                         </ul>
                     </div>
 
+                    {/* Academic Structure */}
                     <div>
-                        <h4 className="font-bold mb-6 text-white">Legal</h4>
-                        <ul className="space-y-4 text-sm text-text-secondary">
-                            <li><Link to="#" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                            <li><Link to="#" className="hover:text-primary transition-colors">Cookie Policy</Link></li>
+                        <h4 className="font-semibold mb-4 text-white text-sm uppercase tracking-wider">Academic Structure</h4>
+                        <ul className="space-y-3 text-sm text-text-secondary">
+                            <li className="flex items-center gap-2 text-zinc-400">
+                                <GraduationCap className="w-4 h-4 text-primary shrink-0" />
+                                <span>Computer Science (BSCS)</span>
+                            </li>
+                            <li className="flex items-center gap-2 text-zinc-400">
+                                <GraduationCap className="w-4 h-4 text-primary shrink-0" />
+                                <span>Software Engineering (BSSE)</span>
+                            </li>
+                            <li className="flex items-center gap-2 text-zinc-400">
+                                <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                                <span>Role-Based Access (RBAC)</span>
+                            </li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-text-secondary text-sm">
-                        © {new Date().getFullYear()} LMS.pro. All rights reserved.
+                        © {new Date().getFullYear()} University Learning Management System (LMS). All rights reserved.
                     </p>
-                    <div className="flex items-center gap-6">
-                        <a href="#" className="text-text-secondary hover:text-white transition-colors"><Github className="w-5 h-5" /></a>
-                        <a href="#" className="text-text-secondary hover:text-white transition-colors"><Twitter className="w-5 h-5" /></a>
-                        <a href="#" className="text-text-secondary hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>
+                    <div className="text-xs text-text-secondary">
+                        Academic Year 2025–2026 • Semester Management System
                     </div>
-                </div>
-
-                <div className="text-center mt-8 text-xs text-text-secondary flex items-center justify-center gap-1">
-                    Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> by Asim
                 </div>
             </div>
         </footer>
