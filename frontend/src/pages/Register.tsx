@@ -180,12 +180,16 @@ const Register = () => {
 
                                 {isDropdownOpen && (
                                     <div className="absolute top-full left-0 w-full mt-2 border border-white/10 rounded-xl shadow-xl overflow-hidden z-[9999] animate-in fade-in zoom-in-95 duration-200" style={{ backgroundColor: '#0f172a' }}>
-                                        {['student', 'teacher', 'admin'].map((role) => (
+                                        {['student', 'teacher'].map((role) => (
                                             <button
                                                 key={role}
                                                 type="button"
                                                 onClick={() => {
-                                                    setFormData({ ...formData, role });
+                                                    setFormData({
+                                                        ...formData,
+                                                        role,
+                                                        program_id: role === 'student' ? (programs[0]?.id || '') : ''
+                                                    });
                                                     setIsDropdownOpen(false);
                                                 }}
                                                 className={`w-full px-4 py-3 text-left capitalize transition-colors hover:bg-white/5 flex items-center justify-between ${formData.role === role ? 'text-primary bg-primary/5 font-medium' : 'text-text-secondary'}`}
@@ -200,6 +204,9 @@ const Register = () => {
                                 )}
                             </div>
                         </div>
+                        <p className="text-xs text-text-secondary mt-2">
+                            * Administrator accounts are provisioned exclusively by Central University IT.
+                        </p>
                     </div>
 
                     <button

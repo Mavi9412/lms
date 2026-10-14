@@ -29,6 +29,13 @@ def signup(user: UserCreate, session: Session = Depends(get_session)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Security: Administrator accounts cannot be self-registered via public signup
+    if user.role == Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator accounts cannot be created via public registration. Contact the university system administrator."
+        )
+
     hashed_password = get_password_hash(user.password)
     # Correctly mapping UserCreate to User, ensuring role is handle if missing
     db_user = User(
@@ -36,7 +43,7 @@ def signup(user: UserCreate, session: Session = Depends(get_session)):
         full_name=user.full_name,
         hashed_password=hashed_password,
         role=user.role,
-        program_id=user.program_id
+        program_id=user.program_id if user.role == Role.student else None
     )
     session.add(db_user)
     session.commit()
