@@ -163,10 +163,27 @@ npm run dev -- --host 127.0.0.1 --port 5173
 ```
 👉 *Web App live:* `http://127.0.0.1:5173`
 
-### Login Accounts
-- **Admin:** `admin@lms.com` | `admin123`
-- **Teacher:** `teacher@lms.com` | `teacher123`
-- **Student:** `student@lms.com` | `student123`
+### ⚡ Naye Computer Par Auto Dummy Data Dalne Ka Tareeqa (Seed Script)
+Agar aap kisi naye laptop ya computer par project clone karein to database mein poora dummy data (Departments, Courses, Teachers, Students, Submissions, Grades, Attendance, Quizzes) khud-bakhud add karne ke liye root folder mein sirf yeh command chalayein:
+```powershell
+python seed.py
+```
+*(Yeh script 2 seconds mein database create karke poora university structure setup kar deti hai).*
+
+### 🔑 Ready-to-Use Login Accounts
+
+| Role | Name / Department | Email | Password |
+| :--- | :--- | :--- | :--- |
+| **Admin** | System Administrator | `admin@lms.com` | `admin123` |
+| **Teacher** | Dr. Sarah Jenkins (CS) | `teacher@lms.com` | `teacher123` |
+| **Teacher** | Prof. Tariq Mahmood (CS) | `prof.tariq@lms.com` | `password123` |
+| **Teacher** | Dr. Ayesha Malik (EE) | `dr.ayesha@lms.com` | `password123` |
+| **Teacher** | Dr. Bilal Khan (CS) | `dr.bilal@lms.com` | `password123` |
+| **Student** | John Doe (CS) | `student@lms.com` | `student123` |
+| **Student** | Ali Ahmed (CS) | `ali.ahmed@lms.com` | `password123` |
+| **Student** | Sara Khan (CS) | `sara.khan@lms.com` | `password123` |
+| **Student** | Usman Raza (EE) | `usman.raza@lms.com` | `password123` |
+| **Student** | Fatima Noor (EE) | `fatima.noor@lms.com` | `password123` |
 
 ---
 
